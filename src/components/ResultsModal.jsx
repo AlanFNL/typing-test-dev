@@ -62,8 +62,11 @@ const ResultsModal = ({
     // Reset currentUser if attempts exceed 2 or if it's the last attempt and doesn't qualify
     if (attemptNumber > 2 || (isLastAttempt && !qualifiesForPrizeWheel)) {
       localStorage.removeItem("currentUser");
+      // Force a page reload to reset all states
+      window.location.reload();
+    } else {
+      onClose();
     }
-    onClose();
   };
 
   return (
