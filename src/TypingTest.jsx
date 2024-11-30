@@ -52,9 +52,9 @@ const TypingTest = () => {
     setDifficulty(selectedDifficulty);
 
     // Focus the typing input after username is set
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       inputRef.current?.focus();
-    }, 100);
+    });
   };
 
   const handleTestComplete = (results) => {
@@ -282,41 +282,47 @@ const TypingTest = () => {
     }
   };
 
-  // Update this effect to maintain focus
+  // Update the useEffect for focus management
   useEffect(() => {
-    const handleClick = (e) => {
-      // Check if the click is inside the username modal
-      const isUsernameModal = e.target.closest(".username-modal");
+    // Only handle focus if we have a current user and results aren't showing
+    if (!currentUser || showResults) return;
 
-      // Only focus the typing input if we're not clicking the username modal
-      // and results aren't showing and we have a current user
-      if (!isUsernameModal && !showResults && currentUser) {
+    // Focus the input immediately when component mounts or user is set
+    inputRef.current?.focus();
+
+    const handleFocusLoss = (e) => {
+      // Ignore if clicking within modals or if results are showing
+      const isModal = e.target.closest(
+        ".username-modal, .results-modal, .prize-wheel-modal, .leaderboard-modal"
+      );
+      if (!isModal && !showResults && currentUser) {
         inputRef.current?.focus();
       }
     };
 
-    const handleInputClick = (e) => {
-      e.stopPropagation();
-    };
-
-    document.addEventListener("click", handleClick);
-    inputRef.current?.addEventListener("click", handleInputClick);
+    // Add both click and focus events
+    document.addEventListener("click", handleFocusLoss);
+    document.addEventListener("focusin", handleFocusLoss);
 
     return () => {
-      document.removeEventListener("click", handleClick);
-      inputRef.current?.removeEventListener("click", handleInputClick);
+      document.removeEventListener("click", handleFocusLoss);
+      document.removeEventListener("focusin", handleFocusLoss);
     };
-  }, [showResults, currentUser]);
+  }, [currentUser, showResults]);
 
   const resetTest = () => {
     setTyped("");
     setCurrentIndex(0);
     setIsActive(false);
     setTimeLeft(time);
-    setErrors(0); // Reset errors
-    setCompletedWords(0); // Reset completed words
-    setUnfinishedWords(0); // Reset unfinished words
-    inputRef.current?.focus();
+    setErrors(0);
+    setCompletedWords(0);
+    setUnfinishedWords(0);
+
+    // Focus the input after reset
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
   };
 
   const colors = {
@@ -509,6 +515,15 @@ const TypingTest = () => {
             type="text"
             className="opacity-0 absolute inset-0 cursor-default"
             onKeyDown={handleKeyDown}
+            onBlur={(e) => {
+              // Prevent focus loss unless it's going to a modal
+              const isModal = e.relatedTarget?.closest(
+                ".username-modal, .results-modal, .prize-wheel-modal, .leaderboard-modal"
+              );
+              if (!isModal && !showResults && currentUser) {
+                e.target.focus();
+              }
+            }}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
