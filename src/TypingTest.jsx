@@ -112,6 +112,7 @@ const TypingTest = () => {
   const calculateResults = () => {
     if (showResults) return;
 
+    // Convert time to minutes (15 seconds = 0.25 minutes)
     const timeInMinutes = (time - timeLeft) / 60;
 
     // Split words and filter empty strings, convert to lowercase for comparison
@@ -157,8 +158,10 @@ const TypingTest = () => {
       incorrectWords += originalWords.length - typedWords.length;
     }
 
-    // Calculate WPM based on correct words only
-    const wpm = Math.round(correctWords / timeInMinutes);
+    // Calculate WPM using the correct formula
+    // WPM = (number of words / time in minutes)
+    // For a 15-second test, multiply by 4 to get the equivalent per-minute rate
+    const wpm = Math.round(correctWords * (60 / time));
 
     // Calculate accuracy based on keystrokes
     const accuracy = Math.round(
