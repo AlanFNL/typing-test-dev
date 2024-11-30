@@ -112,7 +112,6 @@ const TypingTest = () => {
   const calculateResults = () => {
     if (showResults) return;
 
-    // Convert time to minutes (15 seconds = 0.25 minutes)
     const timeInMinutes = (time - timeLeft) / 60;
 
     // Split words and filter empty strings, convert to lowercase for comparison
@@ -133,14 +132,7 @@ const TypingTest = () => {
     let totalKeystrokes = typed.length;
     let correctKeystrokes = 0;
 
-    // Count correct keystrokes (case-insensitive)
-    for (let i = 0; i < Math.min(typed.length, text.length); i++) {
-      if (typed[i].toLowerCase() === text[i].toLowerCase()) {
-        correctKeystrokes++;
-      }
-    }
-
-    // Improved word comparison logic (case-insensitive)
+    // Recalculate correct words after any corrections
     for (let i = 0; i < typedWords.length; i++) {
       if (i < originalWords.length) {
         if (typedWords[i] === originalWords[i]) {
@@ -159,8 +151,6 @@ const TypingTest = () => {
     }
 
     // Calculate WPM using the correct formula
-    // WPM = (number of words / time in minutes)
-    // For a 15-second test, multiply by 4 to get the equivalent per-minute rate
     const wpm = Math.round(correctWords * (60 / time));
 
     // Calculate accuracy based on keystrokes
@@ -244,7 +234,7 @@ const TypingTest = () => {
       e.ctrlKey ||
       e.altKey ||
       e.metaKey ||
-      (e.key.length > 1 && e.key !== "Backspace") // Allow Backspace but ignore other special keys
+      (e.key.length > 1 && e.key !== "Backspace")
     ) {
       return;
     }
@@ -257,32 +247,28 @@ const TypingTest = () => {
       if (currentIndex > 0) {
         setTyped((prev) => prev.slice(0, -1));
         setCurrentIndex((prev) => prev - 1);
-        // Make comparison case-insensitive for backspace too
+        // Correct the error count when deleting
         if (
-          typed[typed.length - 1].toLowerCase() ===
+          typed[typed.length - 1].toLowerCase() !==
           text[currentIndex - 1].toLowerCase()
         ) {
-          setErrors((prev) => prev + 1);
+          setErrors((prev) => prev - 1);
         }
       }
       return;
     }
 
     if (e.key !== "Tab") {
-      // Only allow typing if we haven't reached the end of the text
       if (currentIndex < text.length) {
         let inputChar = e.key;
 
-        // Handle accent marks
         if (inputChar === "´") {
-          return; // Skip the accent mark key press
+          return;
         }
 
-        // Store the character but compare case-insensitively
         setTyped((prev) => prev + inputChar);
         setCurrentIndex((prev) => prev + 1);
 
-        // Compare characters case-insensitively
         if (text[currentIndex].toLowerCase() !== inputChar.toLowerCase()) {
           setErrors((prev) => prev + 1);
         }
