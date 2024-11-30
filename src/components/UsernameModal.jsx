@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import easy from "../assets/easy.png";
 import hard from "../assets/hard.png";
-import openSound from "../assets/start.mp3";
 
 const UsernameModal = ({ onSubmit }) => {
   const [username, setUsername] = useState("");
@@ -12,15 +11,6 @@ const UsernameModal = ({ onSubmit }) => {
   const handleSubmit = () => {
     onSubmit(username, difficulty);
   };
-
-  useEffect(() => {
-    const audio = new Audio(openSound);
-    const timeoutId = setTimeout(() => {
-      audio.play();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, []);
 
   return (
     <motion.div
