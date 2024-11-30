@@ -52,15 +52,15 @@ const ResultsModal = ({
 }) => {
   const attemptNumber = currentUser?.attempts?.length || 0;
   const isFirstAttempt = attemptNumber === 1;
-  const isLastAttempt = attemptNumber === 2;
+  const isLastAttempt = attemptNumber >= 2;
 
   // Check if user qualifies for prize wheel
   const qualifiesForPrizeWheel =
     isLastAttempt && currentUser?.attempts?.some((attempt) => attempt.wpm > 40);
 
   const handleClose = () => {
-    // If it's the last attempt and user doesn't qualify for prize wheel
-    if (isLastAttempt && !qualifiesForPrizeWheel) {
+    // Reset currentUser if attempts exceed 2 or if it's the last attempt and doesn't qualify
+    if (attemptNumber > 2 || (isLastAttempt && !qualifiesForPrizeWheel)) {
       localStorage.removeItem("currentUser");
     }
     onClose();

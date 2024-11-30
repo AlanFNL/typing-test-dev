@@ -27,9 +27,10 @@ const TypingTest = () => {
   const [completionTime, setCompletionTime] = useState(null);
   const [unfinishedWords, setUnfinishedWords] = useState(0);
   const [completedWords, setCompletedWords] = useState(0);
-  const [isDifficult, setIsDifficult] = useState(false);
+  const [difficulty, setDifficulty] = useState("easy");
   const [isPrizeWheelOpen, setIsPrizeWheelOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [requestModal, setRequestModal] = useState(false);
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("currentUser");
@@ -41,18 +42,19 @@ const TypingTest = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const handleNewUser = (username) => {
+  const handleNewUser = (username, selectedDifficulty) => {
     const newUser = {
       username,
       attempts: [],
     };
     localStorage.setItem("currentUser", JSON.stringify(newUser));
     setCurrentUser(newUser);
+    setDifficulty(selectedDifficulty);
 
     // Focus the typing input after username is set
     setTimeout(() => {
       inputRef.current?.focus();
-    }, 100); // Small delay to ensure modal is fully closed
+    }, 100);
   };
 
   const handleTestComplete = (results) => {
@@ -63,7 +65,7 @@ const TypingTest = () => {
       accuracy: results.accuracy,
       errors,
       timestamp: Date.now(),
-      difficulty: isDifficult ? "hard" : "easy",
+      difficulty: difficulty,
     };
 
     const attemptNumber = currentUser.attempts.length + 1;
@@ -233,7 +235,10 @@ const TypingTest = () => {
         setTyped((prev) => prev.slice(0, -1));
         setCurrentIndex((prev) => prev - 1);
         // Only count an error if we're deleting a correct character
-        if (typed[typed.length - 1] === text[currentIndex - 1]) {
+        if (
+          typed[typed.length - 1].toLowerCase() ===
+          text[currentIndex - 1].toLowerCase()
+        ) {
           setErrors((prev) => prev + 1);
         }
       }
@@ -243,10 +248,18 @@ const TypingTest = () => {
     if (e.key !== "Tab") {
       // Only allow typing if we haven't reached the end of the text
       if (currentIndex < text.length) {
-        setTyped((prev) => prev + e.key);
+        let inputChar = e.key;
+
+        // Handle accent marks
+        if (inputChar === "´") {
+          return; // Skip the accent mark key press
+        }
+
+        // Compare characters case-insensitively
+        setTyped((prev) => prev + inputChar);
         setCurrentIndex((prev) => prev + 1);
 
-        if (text[currentIndex] !== e.key) {
+        if (text[currentIndex].toLowerCase() !== inputChar.toLowerCase()) {
           setErrors((prev) => prev + 1);
         }
 
@@ -258,6 +271,18 @@ const TypingTest = () => {
       }
     }
   };
+
+  // Update this effect to maintain focus
+  useEffect(() => {
+    const handleClick = () => {
+      if (!showResults) {
+        inputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [showResults]);
 
   const resetTest = () => {
     setTyped("");
@@ -275,11 +300,6 @@ const TypingTest = () => {
     current: "#EAB308",
     correct: "#22C55E",
     incorrect: "#EF4444",
-  };
-
-  const toggleDifficulty = () => {
-    setIsDifficult((prev) => !prev);
-    resetTest();
   };
 
   const handlePrizeWon = (prize) => {
@@ -327,6 +347,16 @@ const TypingTest = () => {
       };
     }
     return { difficulty: "easy", wpm: 0 }; // default fallback
+  };
+
+  const resetUser = () => {
+    localStorage.removeItem("currentUser");
+    setCurrentUser(null);
+    setRequestModal(!requestModal);
+  };
+
+  const toggleModal = () => {
+    setRequestModal(!requestModal);
   };
 
   return (
@@ -394,20 +424,13 @@ const TypingTest = () => {
               className="flex items-center gap-2"
             >
               <span className="text-gray-400">Dificultad:</span>
-              <motion.span
-                className={isDifficult ? "text-yellow-500" : "text-gray-300"}
-                animate={{
-                  opacity: [1, 0.5, 1],
-                  y: [0, -5, 0],
-                }}
-                transition={{
-                  duration: 0.3,
-                  times: [0, 0.5, 1],
-                }}
-                key={isDifficult ? "difficult" : "easy"}
+              <motion.div
+                className={
+                  difficulty === "hard" ? "text-yellow-500" : "text-gray-300"
+                }
               >
-                {isDifficult ? "Difícil" : "Fácil"}
-              </motion.span>
+                {difficulty === "hard" ? "Difícil" : "Fácil"}
+              </motion.div>
             </motion.div>
           </motion.div>
         </motion.div>
@@ -420,51 +443,21 @@ const TypingTest = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Difficulty Switch */}
-            <div className="flex flex-col items-center gap-1">
+            {currentUser ? (
               <motion.button
-                onClick={toggleDifficulty}
-                className={`relative h-7 w-[90px] rounded-full bg-gray-700/50 p-1 transition-colors ${
-                  isActive ? "opacity-50 cursor-not-allowed" : ""
+                onClick={toggleModal}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isActive}
+                className={`flex bg-gray-700 items-center justify-center w-fit p-2 h-10 rounded-lg text-gray-300 hover:text-yellow-500 transition-colors ${
+                  isActive ? "hidden cursor-not-allowed" : ""
                 }`}
-                animate={{
-                  backgroundColor: isDifficult
-                    ? "rgb(234 179 8 / 0.2)"
-                    : "rgb(55 65 81 / 0.5)",
-                }}
-                transition={{ duration: 0.3 }}
-                disabled={isActive} // Disable button when test is active
               >
-                <motion.div
-                  className="absolute top-1 left-1 w-5 h-5 rounded-full bg-yellow-500"
-                  animate={{
-                    x: isDifficult ? 62 : 0,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                />
+                <p>Rendirse</p>
               </motion.button>
-
-              <div className="flex justify-between w-[90px] text-[11px] font-medium">
-                <span
-                  className={`transition-colors ${
-                    !isDifficult ? "text-gray-300" : "text-gray-500"
-                  }`}
-                >
-                  Fácil
-                </span>
-                <span
-                  className={`transition-colors ${
-                    isDifficult ? "text-yellow-500" : "text-gray-500"
-                  }`}
-                >
-                  Difícil
-                </span>
-              </div>
-            </div>
+            ) : (
+              <></>
+            )}
 
             {/* Leaderboard Button */}
             <motion.button
@@ -472,7 +465,7 @@ const TypingTest = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={`flex items-center justify-center w-10 h-10 rounded-lg bg-gray-700/50 text-gray-300 hover:text-yellow-500 transition-colors ${
-                isActive ? "opacity-50 cursor-not-allowed" : ""
+                isActive ? "hidden cursor-not-allowed" : ""
               }`}
               transition={{ duration: 0.3 }}
               disabled={isActive} // Disable button when test is active
@@ -551,6 +544,53 @@ const TypingTest = () => {
               isOpen={isLeaderboardOpen}
               onClose={handleCloseLeaderboard}
             />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {requestModal && (
+            <motion.div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <motion.div
+                className="bg-gray-800/95 p-8 rounded-xl w-full max-w-sm backdrop-blur-sm border border-gray-700/50"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{
+                  type: "spring",
+                  duration: 0.5,
+                  bounce: 0.3,
+                }}
+              >
+                <motion.div className="flex flex-col justify-center items-center">
+                  <p className="text-l text-gray-300 text-center">
+                    ¿Estás seguro que querés rendirte?
+                  </p>
+                  <p className="text-sm text-gray-300 text-center mt-2">
+                    Se reiniciará el progreso actual
+                  </p>
+                  <div className="gap-4 flex mt-8">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={resetUser}
+                      className="bg-red-700 border border-gray-700/50 rounded p-2 hover:opacity-80 transition-all"
+                    >
+                      Rendirme
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => setRequestModal(!requestModal)}
+                      className="bg-gray-700 border border-gray-700/50 rounded p-2 hover:opacity-80  transition-all"
+                    >
+                      Cancelar
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

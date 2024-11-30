@@ -37,6 +37,10 @@ const PrizesAdmin = () => {
     setIsEditing(true);
   };
 
+  const updatePrizesState = () => {
+    setPrizes(getPrizes());
+  };
+
   const PrizeForm = ({ prize, onClose }) => {
     const [form, setForm] = useState({
       id: prize.id || "",
@@ -50,11 +54,12 @@ const PrizesAdmin = () => {
       console.log("Form submission started");
       console.log("Form data:", form);
 
-      let updatedPrizes;
+      let success = false;
 
       if (!prize.isNew) {
         console.log("Updating existing prize");
-        updatedPrizes = updatePrize(activeTab, activeLevel, prize.id, form);
+        const result = updatePrize(activeTab, activeLevel, prize.id, form);
+        success = result !== null;
       } else {
         console.log("Creating new prize");
         const newPrize = {
@@ -64,14 +69,13 @@ const PrizesAdmin = () => {
           enabled: form.enabled,
         };
         console.log("New prize object:", newPrize);
-        updatedPrizes = createPrize(activeTab, activeLevel, newPrize);
+        const result = createPrize(activeTab, activeLevel, newPrize);
+        success = result !== null;
       }
 
-      console.log("Updated prizes:", updatedPrizes);
-
-      if (updatedPrizes) {
+      if (success) {
         console.log("Setting new prizes state");
-        setPrizes(updatedPrizes);
+        updatePrizesState();
         onClose();
       } else {
         console.error("Failed to update prizes");
@@ -163,7 +167,7 @@ const PrizesAdmin = () => {
               confirm("¿Restaurar todos los premios a valores predeterminados?")
             ) {
               resetPrizes();
-              setPrizes(getPrizes());
+              updatePrizesState();
             }
           }}
           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
@@ -218,7 +222,7 @@ const PrizesAdmin = () => {
                   min: parseInt(e.target.value),
                 };
                 updateWPMRange(activeTab, activeLevel, newRange);
-                setPrizes(getPrizes());
+                updatePrizesState();
               }}
               className="bg-gray-600 px-3 py-1 rounded"
             />
@@ -237,7 +241,7 @@ const PrizesAdmin = () => {
                     activeLevel === "advanced" ? 999 : parseInt(e.target.value),
                 };
                 updateWPMRange(activeTab, activeLevel, newRange);
-                setPrizes(getPrizes());
+                updatePrizesState();
               }}
               className="bg-gray-600 px-3 py-1 rounded"
             />
@@ -303,7 +307,7 @@ const PrizesAdmin = () => {
                       updatePrize(activeTab, activeLevel, prize.id, {
                         enabled: e.target.checked,
                       });
-                      setPrizes(getPrizes());
+                      updatePrizesState();
                     }}
                     className="sr-only peer"
                   />

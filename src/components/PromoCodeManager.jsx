@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import promoCodes from "../config/promoCodes.json";
+import { Filter } from "lucide-react";
 
 const CODES_PER_PAGE = 100;
 
@@ -9,13 +10,25 @@ const PromoCodeManager = () => {
   const [deliveredCodes, setDeliveredCodes] = useState([]);
   const [pendingCodes, setPendingCodes] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedCode, setSelectedCode] = useState(null);
+  const [redeemedTimestamps, setRedeemedTimestamps] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showUndoModal, setShowUndoModal] = useState(false);
+  const [undoCode, setUndoCode] = useState(null);
+  const [deliveredTimestamps, setDeliveredTimestamps] = useState({});
+  const [sortOrder, setSortOrder] = useState("default");
 
   useEffect(() => {
-    // Load delivered codes from localStorage
+    // Load delivered codes and timestamps from localStorage
     const storedDeliveredCodes = JSON.parse(
       localStorage.getItem("deliveredCodes") || "[]"
     );
+    const storedTimestamps = JSON.parse(
+      localStorage.getItem("deliveredTimestamps") || "{}"
+    );
     setDeliveredCodes(storedDeliveredCodes);
+    setDeliveredTimestamps(storedTimestamps);
 
     // Set pending codes (all codes that aren't delivered)
     const pending = promoCodes.giftCodes.filter(
@@ -25,30 +38,94 @@ const PromoCodeManager = () => {
   }, []);
 
   const handleCodeDelivered = (code) => {
-    const newDeliveredCodes = [...deliveredCodes, code].sort();
-    const newPendingCodes = pendingCodes.filter((c) => c !== code);
-
-    setDeliveredCodes(newDeliveredCodes);
-    setPendingCodes(newPendingCodes);
-    localStorage.setItem("deliveredCodes", JSON.stringify(newDeliveredCodes));
+    setSelectedCode(code);
+    setShowModal(true);
   };
 
   const handleUndoDelivered = (code) => {
-    const newDeliveredCodes = deliveredCodes.filter((c) => c !== code);
-    const newPendingCodes = [...pendingCodes, code].sort();
+    setUndoCode(code);
+    setShowUndoModal(true);
+  };
+
+  const confirmDelivery = () => {
+    const timestamp = new Date().toLocaleString();
+    const newDeliveredCodes = [...deliveredCodes, selectedCode].sort();
+    const newPendingCodes = pendingCodes.filter((c) => c !== selectedCode);
 
     setDeliveredCodes(newDeliveredCodes);
     setPendingCodes(newPendingCodes);
+    setDeliveredTimestamps((prev) => ({
+      ...prev,
+      [selectedCode]: timestamp,
+    }));
+
+    // Store in localStorage
     localStorage.setItem("deliveredCodes", JSON.stringify(newDeliveredCodes));
+    localStorage.setItem(
+      "deliveredTimestamps",
+      JSON.stringify({
+        ...deliveredTimestamps,
+        [selectedCode]: timestamp,
+      })
+    );
+
+    setShowModal(false);
   };
 
-  // Get current codes based on pagination
+  const confirmUndo = () => {
+    const newDeliveredCodes = deliveredCodes.filter((c) => c !== undoCode);
+    const newPendingCodes = [...pendingCodes, undoCode].sort();
+
+    setDeliveredCodes(newDeliveredCodes);
+    setPendingCodes(newPendingCodes);
+
+    // Update localStorage
+    const updatedTimestamps = { ...deliveredTimestamps };
+    delete updatedTimestamps[undoCode];
+    localStorage.setItem("deliveredCodes", JSON.stringify(newDeliveredCodes));
+    localStorage.setItem(
+      "deliveredTimestamps",
+      JSON.stringify(updatedTimestamps)
+    );
+
+    setShowUndoModal(false);
+  };
+
+  // Get current codes based on pagination and search
   const getCurrentCodes = () => {
-    const startIndex = (currentPage - 1) * CODES_PER_PAGE;
-    const endIndex = startIndex + CODES_PER_PAGE;
-    return activeTab === "pending"
-      ? pendingCodes.slice(startIndex, endIndex)
-      : deliveredCodes.slice(startIndex, endIndex);
+    const filteredCodes =
+      activeTab === "pending" ? pendingCodes : deliveredCodes;
+
+    let sortedCodes = [...filteredCodes];
+
+    // Only sort/reverse if we're in the delivered tab
+    if (activeTab === "delivered") {
+      if (sortOrder === "latest") {
+        // Sort by timestamp, newest first
+        sortedCodes.sort((a, b) => {
+          const timeA = deliveredTimestamps[a]?.split(", ")[1] || "";
+          const timeB = deliveredTimestamps[b]?.split(", ")[1] || "";
+          return timeB.localeCompare(timeA);
+        });
+      } else if (sortOrder === "oldest") {
+        // Sort by timestamp, oldest first
+        sortedCodes.sort((a, b) => {
+          const timeA = deliveredTimestamps[a]?.split(", ")[1] || "";
+          const timeB = deliveredTimestamps[b]?.split(", ")[1] || "";
+          return timeA.localeCompare(timeB);
+        });
+      }
+      // If sortOrder is "default", use the original order
+    }
+
+    return sortedCodes
+      .filter(
+        (code) =>
+          code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (activeTab === "delivered" &&
+            deliveredTimestamps[code]?.includes(searchTerm))
+      )
+      .slice((currentPage - 1) * CODES_PER_PAGE, currentPage * CODES_PER_PAGE);
   };
 
   const totalPages = Math.ceil(
@@ -66,6 +143,15 @@ const PromoCodeManager = () => {
       <h1 className="text-3xl font-bold text-center mb-8 text-yellow-500">
         Códigos afaafa
       </h1>
+
+      {/* Search Input */}
+      <input
+        type="text"
+        placeholder="Buscar códigos o timestamps..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full p-2 mb-4 rounded bg-gray-800 text-gray-300"
+      />
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
@@ -95,10 +181,103 @@ const PromoCodeManager = () => {
         </motion.button>
       </div>
 
+      {/* Updated Sorting Button */}
+      {activeTab === "delivered" && (
+        <button
+          onClick={() =>
+            setSortOrder((prev) => {
+              if (prev === "default") return "latest";
+              if (prev === "latest") return "oldest";
+              return "default";
+            })
+          }
+          className="flex items-center gap-2 mb-4 text-gray-300"
+        >
+          <Filter className="w-5 h-5" />
+          {sortOrder === "default" && "Orden por defecto"}
+          {sortOrder === "latest" && "Ordenar por más recientes"}
+          {sortOrder === "oldest" && "Ordenar por más antiguos"}
+        </button>
+      )}
+
       {/* Pagination Info */}
       <div className="text-gray-400 text-sm mb-4 text-center">
         Página {currentPage} de {totalPages}
       </div>
+
+      {/* Confirmation Modal for Delivery */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-slate-700 p-6 rounded-lg"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+            >
+              <h2 className="text-lg text-center text-gray-200 font-bold">
+                ¿Estás seguro pa?
+              </h2>
+              <div className="flex justify-between gap-4 mt-4">
+                <button
+                  onClick={confirmDelivery}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:opacity-70 transition-all"
+                >
+                  Aceptar
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:opacity-70 transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal for Undo */}
+      <AnimatePresence>
+        {showUndoModal && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-slate-700 p-6 rounded-lg"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+            >
+              <h2 className="text-lg text-center text-gray-200 font-bold">
+                ¿Estás seguro pa?
+              </h2>
+              <div className="flex justify-between gap-4 mt-4">
+                <button
+                  onClick={confirmUndo}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:opacity-70 transition-all"
+                >
+                  Aceptar
+                </button>
+                <button
+                  onClick={() => setShowUndoModal(false)}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:opacity-70 transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Code Lists */}
       <AnimatePresence mode="wait">
@@ -130,6 +309,11 @@ const PromoCodeManager = () => {
                 <motion.span layout className="font-mono text-gray-300">
                   {code}
                 </motion.span>
+                {activeTab === "delivered" && deliveredTimestamps[code] && (
+                  <span className="text-gray-400 text-sm">
+                    {deliveredTimestamps[code]}
+                  </span>
+                )}
                 <motion.button
                   layout
                   whileHover={{ scale: 1.1 }}

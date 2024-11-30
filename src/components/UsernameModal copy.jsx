@@ -20,7 +20,7 @@ const UsernameModal = ({ onSubmit }) => {
       transition={{ duration: 0.2 }}
     >
       <motion.div
-        className="bg-gray-800/95 p-8 rounded-xl w-full max-w-lg backdrop-blur-sm border border-gray-700/50"
+        className="bg-gray-800/95 p-8 rounded-xl w-full max-w-md backdrop-blur-sm border border-gray-700/50"
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{
@@ -51,8 +51,7 @@ const UsernameModal = ({ onSubmit }) => {
 
           <h2 className="text-2xl font-bold mb-2">¡Bienvenido!</h2>
           <p className="text-gray-400 mb-6 text-sm">
-            Ingresa tu apodo y una dificultad, tendrás 2 intentos para lograr tu
-            mejor resultado
+            Ingresa tu apodo y tendrás 2 intentos para lograr tu mejor resultado
           </p>
 
           <div className="w-full space-y-4">
@@ -79,7 +78,7 @@ const UsernameModal = ({ onSubmit }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="flex justify-center space-x-52 my-8"
+              className="flex justify-center space-x-12 my-8"
             >
               <div className="flex flex-col items-center space-y-2">
                 <span className="text-sm font-medium text-gray-300">Fácil</span>
@@ -128,18 +127,24 @@ const UsernameModal = ({ onSubmit }) => {
               </div>
             </motion.div>
 
-            <div className="h-32 flex items-center gap-4 justify-center">
-              <img
-                src={easy}
-                alt="Difficulty illustration"
-                className="max-h-24 w-auto"
-              />
-
-              <img
-                src={hard}
-                alt="Difficulty illustration"
-                className="max-h-24 w-auto"
-              />
+            <div className="h-32 flex items-center justify-center">
+              {difficulty === "easy" ? (
+                <>
+                  <img
+                    src={easy}
+                    alt="Difficulty illustration"
+                    className="max-h-full w-auto"
+                  />
+                </>
+              ) : (
+                <>
+                  <img
+                    src={hard}
+                    alt="Difficulty illustration"
+                    className="max-h-full w-auto"
+                  />
+                </>
+              )}
             </div>
 
             <motion.button

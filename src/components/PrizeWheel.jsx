@@ -141,7 +141,8 @@ const PrizeWheel = ({ onPrizeWon, isOpen, onClose, difficulty, wpm = 0 }) => {
             </div>
             <p className="text-xs text-gray-400 mt-3">
               ⚠️ Por seguridad, una vez reveles el código, toma una foto con tu
-              celular y cerrá esta ventana.
+              celular con el código y premio ganado. Al finalizar, podes cerrar
+              esta ventana.
             </p>
           </div>
         )}

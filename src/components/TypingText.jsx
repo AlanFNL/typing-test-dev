@@ -196,7 +196,7 @@ const TypingText = ({
 
                   if (globalIndex < typed.length) {
                     color =
-                      typed[globalIndex] === char
+                      typed[globalIndex].toLowerCase() === char.toLowerCase()
                         ? colors.correct
                         : colors.incorrect;
                   } else if (isCurrentChar) {
