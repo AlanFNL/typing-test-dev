@@ -275,7 +275,7 @@ const TypingTest = () => {
   // Update this effect to maintain focus
   useEffect(() => {
     const handleClick = () => {
-      if (!showResults) {
+      if (!showResults && currentUser) {
         inputRef.current?.focus();
       }
     };
