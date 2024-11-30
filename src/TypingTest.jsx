@@ -83,7 +83,7 @@ const TypingTest = () => {
       updatedUser.bestAttempt = newAttempt;
     }
 
-    if (attemptNumber === 2) {
+    if (attemptNumber >= 2) {
       const newLeaderboard = [
         ...leaderboard,
         {
@@ -114,14 +114,16 @@ const TypingTest = () => {
 
     const timeInMinutes = (time - timeLeft) / 60;
 
-    // Split words and filter empty strings
+    // Split words and filter empty strings, convert to lowercase for comparison
     const originalWords = text
       .trim()
+      .toLowerCase()
       .split(/\s+/)
       .filter((word) => word.length > 0);
 
     const typedWords = typed
       .trim()
+      .toLowerCase()
       .split(/\s+/)
       .filter((word) => word.length > 0);
 
@@ -130,14 +132,14 @@ const TypingTest = () => {
     let totalKeystrokes = typed.length;
     let correctKeystrokes = 0;
 
-    // Count correct keystrokes
+    // Count correct keystrokes (case-insensitive)
     for (let i = 0; i < Math.min(typed.length, text.length); i++) {
-      if (typed[i] === text[i]) {
+      if (typed[i].toLowerCase() === text[i].toLowerCase()) {
         correctKeystrokes++;
       }
     }
 
-    // Improved word comparison logic
+    // Improved word comparison logic (case-insensitive)
     for (let i = 0; i < typedWords.length; i++) {
       if (i < originalWords.length) {
         if (typedWords[i] === originalWords[i]) {
@@ -202,6 +204,24 @@ const TypingTest = () => {
     }
   }, [isActive, timeLeft]);
 
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const attemptNumber = currentUser.attempts.length;
+
+    if (attemptNumber >= 3) {
+      localStorage.removeItem("currentUser");
+      setCurrentUser(null);
+      setTyped("");
+      setCurrentIndex(0);
+      setIsActive(false);
+      setTimeLeft(time);
+      setErrors(0); // Reset errors
+      setCompletedWords(0); // Reset completed words
+      setUnfinishedWords(0); // Reset unfinished words
+    }
+  }, [currentUser]);
+
   const handleKeyDown = (e) => {
     if (showResults) return;
 
@@ -234,7 +254,7 @@ const TypingTest = () => {
       if (currentIndex > 0) {
         setTyped((prev) => prev.slice(0, -1));
         setCurrentIndex((prev) => prev - 1);
-        // Only count an error if we're deleting a correct character
+        // Make comparison case-insensitive for backspace too
         if (
           typed[typed.length - 1].toLowerCase() ===
           text[currentIndex - 1].toLowerCase()
@@ -255,10 +275,11 @@ const TypingTest = () => {
           return; // Skip the accent mark key press
         }
 
-        // Compare characters case-insensitively
+        // Store the character but compare case-insensitively
         setTyped((prev) => prev + inputChar);
         setCurrentIndex((prev) => prev + 1);
 
+        // Compare characters case-insensitively
         if (text[currentIndex].toLowerCase() !== inputChar.toLowerCase()) {
           setErrors((prev) => prev + 1);
         }
