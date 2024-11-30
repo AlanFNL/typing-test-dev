@@ -274,15 +274,29 @@ const TypingTest = () => {
 
   // Update this effect to maintain focus
   useEffect(() => {
-    const handleClick = () => {
-      if (!showResults && currentUser) {
+    const handleClick = (e) => {
+      // Check if the click is inside the username modal
+      const isUsernameModal = e.target.closest(".username-modal");
+
+      // Only focus the typing input if we're not clicking the username modal
+      // and results aren't showing and we have a current user
+      if (!isUsernameModal && !showResults && currentUser) {
         inputRef.current?.focus();
       }
     };
 
+    const handleInputClick = (e) => {
+      e.stopPropagation();
+    };
+
     document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [showResults]);
+    inputRef.current?.addEventListener("click", handleInputClick);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+      inputRef.current?.removeEventListener("click", handleInputClick);
+    };
+  }, [showResults, currentUser]);
 
   const resetTest = () => {
     setTyped("");
