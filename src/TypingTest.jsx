@@ -42,6 +42,8 @@ const TypingTest = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const shouldAllowFocus = useRef(true);
+
   const handleNewUser = (username, selectedDifficulty) => {
     const newUser = {
       username,
@@ -50,11 +52,11 @@ const TypingTest = () => {
     localStorage.setItem("currentUser", JSON.stringify(newUser));
     setCurrentUser(newUser);
     setDifficulty(selectedDifficulty);
+    shouldAllowFocus.current = true;
 
-    // Focus the typing input after username is set
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       inputRef.current?.focus();
-    });
+    }, 100);
   };
 
   const handleTestComplete = (results) => {
@@ -112,8 +114,6 @@ const TypingTest = () => {
   const calculateResults = () => {
     if (showResults) return;
 
-    const timeInMinutes = (time - timeLeft) / 60;
-
     // Split words and filter empty strings, convert to lowercase for comparison
     const originalWords = text
       .trim()
@@ -132,10 +132,21 @@ const TypingTest = () => {
     let totalKeystrokes = typed.length;
     let correctKeystrokes = 0;
 
-    // Recalculate correct words after any corrections
+    // Calculate correct keystrokes
+    for (let i = 0; i < Math.min(typed.length, text.length); i++) {
+      if (typed[i].toLowerCase() === text[i].toLowerCase()) {
+        correctKeystrokes++;
+      }
+    }
+
+    // Compare words case-insensitively
     for (let i = 0; i < typedWords.length; i++) {
       if (i < originalWords.length) {
-        if (typedWords[i] === originalWords[i]) {
+        // Compare words after converting both to lowercase
+        const typedWord = typedWords[i].toLowerCase();
+        const originalWord = originalWords[i].toLowerCase();
+
+        if (typedWord === originalWord) {
           correctWords++;
         } else {
           incorrectWords++;
@@ -151,6 +162,7 @@ const TypingTest = () => {
     }
 
     // Calculate WPM using the correct formula
+    // WPM = (number of correct words / time in minutes)
     const wpm = Math.round(correctWords * (60 / time));
 
     // Calculate accuracy based on keystrokes
@@ -159,6 +171,15 @@ const TypingTest = () => {
     );
 
     const isAboveAverage = wpm > 40;
+
+    console.log("Debug info:", {
+      correctWords,
+      typedWords: typedWords.length,
+      originalWords: originalWords.length,
+      timeInSeconds: time,
+      wpm,
+      accuracy,
+    });
 
     setCompletedWords(correctWords);
     setUnfinishedWords(incorrectWords);
@@ -282,31 +303,49 @@ const TypingTest = () => {
     }
   };
 
-  // Update the useEffect for focus management
   useEffect(() => {
-    // Only handle focus if we have a current user and results aren't showing
-    if (!currentUser || showResults) return;
+    if (!currentUser || showResults) {
+      shouldAllowFocus.current = false;
+      return;
+    }
 
-    // Focus the input immediately when component mounts or user is set
+    shouldAllowFocus.current = true;
+
     inputRef.current?.focus();
 
-    const handleFocusLoss = (e) => {
-      // Ignore if clicking within modals or if results are showing
+    const handleClick = (e) => {
       const isModal = e.target.closest(
-        ".username-modal, .results-modal, .prize-wheel-modal, .leaderboard-modal"
+        ".username-modal, .results-modal, .prize-wheel, .leaderboard"
       );
-      if (!isModal && !showResults && currentUser) {
+
+      if (!isModal && shouldAllowFocus.current) {
+        e.preventDefault();
         inputRef.current?.focus();
       }
     };
 
-    // Add both click and focus events
-    document.addEventListener("click", handleFocusLoss);
-    document.addEventListener("focusin", handleFocusLoss);
+    const handleBlur = () => {
+      if (shouldAllowFocus.current) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && shouldAllowFocus.current) {
+        inputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("click", handleClick);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    inputRef.current?.addEventListener("blur", handleBlur);
 
     return () => {
-      document.removeEventListener("click", handleFocusLoss);
-      document.removeEventListener("focusin", handleFocusLoss);
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      inputRef.current?.removeEventListener("blur", handleBlur);
     };
   }, [currentUser, showResults]);
 
@@ -318,11 +357,10 @@ const TypingTest = () => {
     setErrors(0);
     setCompletedWords(0);
     setUnfinishedWords(0);
-
-    // Focus the input after reset
-    requestAnimationFrame(() => {
+    shouldAllowFocus.current = true;
+    setTimeout(() => {
       inputRef.current?.focus();
-    });
+    }, 0);
   };
 
   const colors = {
@@ -355,18 +393,15 @@ const TypingTest = () => {
     }, 100);
   };
 
-  // Update the getCurrentDifficulty function to also get the best WPM
   const getCurrentDifficultyAndWPM = () => {
     const user = JSON.parse(localStorage.getItem("currentUser"));
     if (user?.attempts?.length > 0) {
       const lastDifficulty = user.attempts[user.attempts.length - 1].difficulty;
 
-      // Get all attempts for the current difficulty
       const attemptsForDifficulty = user.attempts.filter(
         (attempt) => attempt.difficulty === lastDifficulty
       );
 
-      // Get the best WPM for this difficulty
       const bestWPM = Math.max(
         ...attemptsForDifficulty.map((attempt) => attempt.wpm)
       );
@@ -376,7 +411,7 @@ const TypingTest = () => {
         wpm: bestWPM,
       };
     }
-    return { difficulty: "easy", wpm: 0 }; // default fallback
+    return { difficulty: "easy", wpm: 0 };
   };
 
   const resetUser = () => {
@@ -489,7 +524,6 @@ const TypingTest = () => {
               <></>
             )}
 
-            {/* Leaderboard Button */}
             <motion.button
               onClick={() => setIsLeaderboardOpen(true)}
               whileHover={{ scale: 1.05 }}
@@ -498,7 +532,7 @@ const TypingTest = () => {
                 isActive ? "hidden cursor-not-allowed" : ""
               }`}
               transition={{ duration: 0.3 }}
-              disabled={isActive} // Disable button when test is active
+              disabled={isActive}
             >
               <Trophy className="w-5 h-5" />
             </motion.button>
@@ -515,20 +549,17 @@ const TypingTest = () => {
             type="text"
             className="opacity-0 absolute inset-0 cursor-default"
             onKeyDown={handleKeyDown}
-            onBlur={(e) => {
-              // Prevent focus loss unless it's going to a modal
-              const isModal = e.relatedTarget?.closest(
-                ".username-modal, .results-modal, .prize-wheel-modal, .leaderboard-modal"
-              );
-              if (!isModal && !showResults && currentUser) {
-                e.target.focus();
-              }
-            }}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck="false"
             autoFocus
+            onFocus={() => {
+              if (!shouldAllowFocus.current) {
+                inputRef.current?.blur();
+              }
+            }}
+            tabIndex={shouldAllowFocus.current ? 0 : -1}
           />
           <TypingText
             text={text}
@@ -572,7 +603,7 @@ const TypingTest = () => {
               isOpen={isPrizeWheelOpen}
               onClose={handleClosePrize}
               onPrizeWon={handlePrizeWon}
-              {...getCurrentDifficultyAndWPM()} // Spread both difficulty and wpm
+              {...getCurrentDifficultyAndWPM()}
             />
           )}
         </AnimatePresence>
