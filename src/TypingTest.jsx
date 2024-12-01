@@ -9,169 +9,7 @@ import UsernameModal from "./components/UsernameModal";
 import PrizeWheel from "./components/PrizeWheel";
 import Leaderboard from "./components/Leaderboard";
 
-const DebugPanel = ({ debugEvents, currentIndex, typed, text, errors }) => {
-  return (
-    <div className="fixed left-4 top-4 bg-gray-800/90 p-4 rounded-lg border border-gray-700/50 w-96 backdrop-blur-sm z-50">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-mono text-yellow-500">Debug Panel</h3>
-        <div className="flex gap-2">
-          <span className="text-xs bg-green-900/30 px-2 py-1 rounded">
-            Correct
-          </span>
-          <span className="text-xs bg-red-900/30 px-2 py-1 rounded">
-            Incorrect
-          </span>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="grid grid-cols-3 gap-2 mb-4 bg-gray-700/30 p-2 rounded">
-        <div className="text-xs">
-          <div className="text-gray-400">Index</div>
-          <div className="font-mono">{currentIndex}</div>
-        </div>
-        <div className="text-xs">
-          <div className="text-gray-400">Typed</div>
-          <div className="font-mono">{typed.length}</div>
-        </div>
-        <div className="text-xs">
-          <div className="text-gray-400">Errors</div>
-          <div className="font-mono">{errors}</div>
-        </div>
-      </div>
-
-      {/* Current Text Section */}
-      <div className="mb-4 p-2 bg-gray-700/30 rounded">
-        <div className="text-xs text-gray-400 mb-1">Current Text Position</div>
-        <div className="font-mono text-xs break-all">
-          <span className="text-gray-400">
-            {text.slice(Math.max(0, currentIndex - 10), currentIndex)}
-          </span>
-          <span className="text-yellow-500 bg-yellow-500/20 px-1">
-            {text[currentIndex] || " "}
-          </span>
-          <span className="text-gray-400">
-            {text.slice(currentIndex + 1, currentIndex + 10)}
-          </span>
-        </div>
-      </div>
-
-      {/* Keystrokes Section */}
-      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-        <div className="text-xs text-gray-400 mb-1">Last Keystrokes</div>
-        {debugEvents.map((event, index) => (
-          <div
-            key={index}
-            className={`text-xs font-mono p-2 rounded flex items-center justify-between ${
-              event.isCorrect ? "bg-green-900/30" : "bg-red-900/30"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="bg-gray-700/50 px-2 py-1 rounded">
-                {event.key === " " ? "␣" : event.key}
-              </span>
-              <span className="text-gray-400">→</span>
-              <span className="bg-gray-700/50 px-2 py-1 rounded">
-                {event.expectedChar === " " ? "␣" : event.expectedChar}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const WordsDebugPanel = ({ typed, text }) => {
-  // Split and process words
-  const originalWords = text
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((word) => word.length > 0);
-
-  const typedWords = typed
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((word) => word.length > 0);
-
-  return (
-    <div className="fixed right-4 top-4 bg-gray-800/90 p-4 rounded-lg border border-gray-700/50 w-96 backdrop-blur-sm z-50">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-mono text-yellow-500">Words Debug</h3>
-        <div className="text-xs text-gray-400">
-          {typedWords.length} / {originalWords.length} words
-        </div>
-      </div>
-
-      <div className="space-y-2 max-h-[500px] overflow-y-auto">
-        {originalWords.map((word, index) => {
-          const typedWord = typedWords[index] || "";
-          const isOverflow = typedWord.length > word.length;
-          const isComplete = typedWord.length >= word.length;
-          const isCorrect = typedWord === word;
-          const isCurrentWord = index === typedWords.length;
-          const wasSkipped = typedWord.includes("×");
-
-          return (
-            <div
-              key={index}
-              className={`p-2 rounded font-mono text-xs ${
-                isCurrentWord
-                  ? "bg-yellow-500/10 border border-yellow-500/20"
-                  : wasSkipped
-                  ? "bg-red-900/50 border-red-500"
-                  : isComplete
-                  ? isCorrect
-                    ? "bg-green-900/30"
-                    : "bg-red-900/30"
-                  : "bg-gray-700/30"
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">#{index + 1}</span>
-                <span className={isCorrect ? "text-green-400" : "text-red-400"}>
-                  {isComplete ? (isCorrect ? "✓" : "✗") : "..."}
-                </span>
-              </div>
-              <div className="mt-1 flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Expected:</span>
-                  <span className="text-gray-200">{word}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Typed:</span>
-                  <span
-                    className={
-                      isComplete
-                        ? isCorrect
-                          ? "text-green-400"
-                          : "text-red-400"
-                        : "text-yellow-500"
-                    }
-                  >
-                    {typedWord || "(not typed yet)"}
-                  </span>
-                </div>
-              </div>
-              {isOverflow && (
-                <div className="mt-1 text-red-400 text-xs">
-                  Overflow: +{typedWord.length - word.length} chars
-                </div>
-              )}
-              {wasSkipped && (
-                <div className="mt-1 text-red-400 text-xs">
-                  Word skipped (spacebar spam)
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+const AVERAGE_WPM = 40;
 
 const TypingTest = () => {
   const [text] = useState(getRandomText());
@@ -195,7 +33,6 @@ const TypingTest = () => {
   const [isPrizeWheelOpen, setIsPrizeWheelOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [requestModal, setRequestModal] = useState(false);
-  const [debugEvents, setDebugEvents] = useState([]);
   const maxDebugEvents = 10;
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -336,9 +173,9 @@ const TypingTest = () => {
       (correctKeystrokes * 100) / Math.max(totalKeystrokes, 1)
     );
 
-    const isAboveAverage = wpm > 40;
+    const isAboveAverage = wpm > AVERAGE_WPM;
 
-    // Add debug logging
+    // Add console debug logging
     console.log("Debug info:", {
       correctWords,
       incorrectWords,
@@ -408,19 +245,6 @@ const TypingTest = () => {
 
   const handleKeyDown = (e) => {
     if (showResults) return;
-
-    // Add debug event
-    setDebugEvents((prev) => [
-      {
-        key: e.key,
-        code: e.code,
-        timestamp: new Date().toLocaleTimeString(),
-        expectedChar: text[currentIndex],
-        isCorrect: e.key.toLowerCase() === text[currentIndex]?.toLowerCase(),
-        currentIndex,
-      },
-      ...prev.slice(0, maxDebugEvents - 1),
-    ]);
 
     // Ignore special keys
     if (
@@ -500,7 +324,6 @@ const TypingTest = () => {
           }
         }
 
-        // Rest of the existing typing logic
         if (typedInCurrentWord < currentWordLength || inputChar === " ") {
           setTyped((prev) => prev + inputChar);
           setCurrentIndex((prev) => prev + 1);
@@ -508,23 +331,6 @@ const TypingTest = () => {
           if (text[currentIndex].toLowerCase() !== inputChar.toLowerCase()) {
             setErrors((prev) => prev + 1);
           }
-
-          // Add debug event with additional word boundary info
-          setDebugEvents((prev) => [
-            {
-              key: inputChar,
-              code: e.code,
-              timestamp: new Date().toLocaleTimeString(),
-              expectedChar: text[currentIndex],
-              isCorrect:
-                inputChar.toLowerCase() === text[currentIndex]?.toLowerCase(),
-              currentIndex,
-              wordOverflow: typedInCurrentWord >= currentWordLength,
-              isWordStart: typedInCurrentWord === 0,
-              isWordEnd: text[currentIndex + 1] === " ",
-            },
-            ...prev.slice(0, maxDebugEvents - 1),
-          ]);
 
           if (currentIndex + 1 === text.length) {
             setIsActive(false);
@@ -661,15 +467,6 @@ const TypingTest = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-300 p-6">
-      <DebugPanel
-        debugEvents={debugEvents}
-        currentIndex={currentIndex}
-        typed={typed}
-        text={text}
-        errors={errors}
-      />
-      <WordsDebugPanel typed={typed} text={text} />
-
       {!currentUser && <UsernameModal onSubmit={handleNewUser} />}
 
       {currentUser && (
@@ -837,6 +634,7 @@ const TypingTest = () => {
               time={time}
               currentUser={currentUser}
               onOpenPrizeWheel={() => setIsPrizeWheelOpen(true)}
+              averageWPM={AVERAGE_WPM}
             />
           )}
         </AnimatePresence>

@@ -61,3 +61,7 @@
 .toggle-label {
   @apply block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer;
 }
+
+.gTLZXx {
+  filter: saturate(0%) !important;
+}

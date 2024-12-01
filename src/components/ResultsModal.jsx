@@ -49,6 +49,7 @@ const ResultsModal = ({
   time,
   currentUser,
   onOpenPrizeWheel,
+  averageWPM,
 }) => {
   const attemptNumber = currentUser?.attempts?.length || 0;
   const isFirstAttempt = attemptNumber === 1;
@@ -56,7 +57,8 @@ const ResultsModal = ({
 
   // Check if user qualifies for prize wheel
   const qualifiesForPrizeWheel =
-    isLastAttempt && currentUser?.attempts?.some((attempt) => attempt.wpm > 40);
+    isLastAttempt &&
+    currentUser?.attempts?.some((attempt) => attempt.wpm > averageWPM);
 
   const handleClose = () => {
     // Reset currentUser if attempts exceed 2 or if it's the last attempt and doesn't qualify
@@ -160,7 +162,7 @@ const ResultsModal = ({
               className="flex items-center gap-2 justify-center p-3 bg-yellow-500/10 rounded-lg text-yellow-500"
             >
               <Award className="w-5 h-5" />
-              <span>¡Superaste el promedio de 40 PPM!</span>
+              <span>¡Superaste el promedio de {averageWPM} PPM!</span>
             </motion.div>
           )}
 

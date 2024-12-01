@@ -215,7 +215,7 @@ const PrizeWheel = ({ onPrizeWon, isOpen, onClose, difficulty, wpm = 0 }) => {
                   className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-0 h-0 
                               border-l-[8px] border-l-transparent
                               border-r-[8px] border-r-transparent
-                              border-t-[16px] border-yellow-500"
+                              border-t-[16px] border-slate-800"
                 />
                 <Wheel
                   mustStartSpinning={mustSpin}
