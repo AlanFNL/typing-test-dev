@@ -82,6 +82,83 @@ const DebugPanel = ({ debugEvents, currentIndex, typed, text, errors }) => {
   );
 };
 
+const WordsDebugPanel = ({ typed, text }) => {
+  // Split and process words
+  const originalWords = text
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+
+  const typedWords = typed
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+
+  return (
+    <div className="fixed right-4 top-4 bg-gray-800/90 p-4 rounded-lg border border-gray-700/50 w-96 backdrop-blur-sm z-50">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-mono text-yellow-500">Words Debug</h3>
+        <div className="text-xs text-gray-400">
+          {typedWords.length} / {originalWords.length} words
+        </div>
+      </div>
+
+      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+        {originalWords.map((word, index) => {
+          const typedWord = typedWords[index] || "";
+          const isComplete = typedWord.length >= word.length;
+          const isCorrect = typedWord === word;
+          const isCurrentWord = index === typedWords.length;
+
+          return (
+            <div
+              key={index}
+              className={`p-2 rounded font-mono text-xs ${
+                isCurrentWord
+                  ? "bg-yellow-500/10 border border-yellow-500/20"
+                  : isComplete
+                  ? isCorrect
+                    ? "bg-green-900/30"
+                    : "bg-red-900/30"
+                  : "bg-gray-700/30"
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">#{index + 1}</span>
+                <span className={isCorrect ? "text-green-400" : "text-red-400"}>
+                  {isComplete ? (isCorrect ? "✓" : "✗") : "..."}
+                </span>
+              </div>
+              <div className="mt-1 flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">Expected:</span>
+                  <span className="text-gray-200">{word}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">Typed:</span>
+                  <span
+                    className={
+                      isComplete
+                        ? isCorrect
+                          ? "text-green-400"
+                          : "text-red-400"
+                        : "text-yellow-500"
+                    }
+                  >
+                    {typedWord || "(not typed yet)"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const TypingTest = () => {
   const [text] = useState(getRandomText());
   const [typed, setTyped] = useState("");
@@ -214,16 +291,17 @@ const TypingTest = () => {
       }
     }
 
-    // Compare words case-insensitively
+    // Compare words case-insensitively and only count complete words
     for (let i = 0; i < typedWords.length; i++) {
       if (i < originalWords.length) {
-        // Compare words after converting both to lowercase
         const typedWord = typedWords[i].toLowerCase();
         const originalWord = originalWords[i].toLowerCase();
 
+        // Only count as correct if the entire word matches
         if (typedWord === originalWord) {
           correctWords++;
         } else {
+          // Partial matches don't count as correct words
           incorrectWords++;
         }
       } else {
@@ -231,13 +309,12 @@ const TypingTest = () => {
       }
     }
 
-    // Add untyped words to incorrect count
+    // Add remaining untyped words to incorrect count
     if (originalWords.length > typedWords.length) {
       incorrectWords += originalWords.length - typedWords.length;
     }
 
-    // Calculate WPM using the correct formula
-    // WPM = (number of correct words / time in minutes)
+    // Calculate WPM using only fully correct words
     const wpm = Math.round(correctWords * (60 / time));
 
     // Calculate accuracy based on keystrokes
@@ -247,11 +324,15 @@ const TypingTest = () => {
 
     const isAboveAverage = wpm > 40;
 
+    // Add debug logging
     console.log("Debug info:", {
       correctWords,
+      incorrectWords,
       typedWords: typedWords.length,
       originalWords: originalWords.length,
       timeInSeconds: time,
+      typedText: typed,
+      words: typedWords,
       wpm,
       accuracy,
     });
@@ -521,6 +602,7 @@ const TypingTest = () => {
         text={text}
         errors={errors}
       />
+      <WordsDebugPanel typed={typed} text={text} />
 
       {!currentUser && <UsernameModal onSubmit={handleNewUser} />}
 
