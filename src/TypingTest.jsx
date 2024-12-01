@@ -108,9 +108,11 @@ const WordsDebugPanel = ({ typed, text }) => {
       <div className="space-y-2 max-h-[500px] overflow-y-auto">
         {originalWords.map((word, index) => {
           const typedWord = typedWords[index] || "";
+          const isOverflow = typedWord.length > word.length;
           const isComplete = typedWord.length >= word.length;
           const isCorrect = typedWord === word;
           const isCurrentWord = index === typedWords.length;
+          const wasSkipped = typedWord.includes("×");
 
           return (
             <div
@@ -118,6 +120,8 @@ const WordsDebugPanel = ({ typed, text }) => {
               className={`p-2 rounded font-mono text-xs ${
                 isCurrentWord
                   ? "bg-yellow-500/10 border border-yellow-500/20"
+                  : wasSkipped
+                  ? "bg-red-900/50 border-red-500"
                   : isComplete
                   ? isCorrect
                     ? "bg-green-900/30"
@@ -151,6 +155,16 @@ const WordsDebugPanel = ({ typed, text }) => {
                   </span>
                 </div>
               </div>
+              {isOverflow && (
+                <div className="mt-1 text-red-400 text-xs">
+                  Overflow: +{typedWord.length - word.length} chars
+                </div>
+              )}
+              {wasSkipped && (
+                <div className="mt-1 text-red-400 text-xs">
+                  Word skipped (spacebar spam)
+                </div>
+              )}
             </div>
           );
         })}
@@ -452,21 +466,73 @@ const TypingTest = () => {
       if (currentIndex < text.length) {
         let inputChar = e.key;
 
-        if (inputChar === "´") {
-          return;
+        if (inputChar === "´") return;
+
+        // Get current word boundaries
+        const currentWordStart = text.lastIndexOf(" ", currentIndex - 1) + 1;
+        const currentWordEnd = text.indexOf(" ", currentWordStart);
+        const currentWordLength =
+          (currentWordEnd === -1 ? text.length : currentWordEnd) -
+          currentWordStart;
+        const typedInCurrentWord = currentIndex - currentWordStart;
+
+        // Prevent spacebar if:
+        // 1. We're at the start of a word (typedInCurrentWord === 0)
+        // 2. The current character in the original text isn't a space
+        if (inputChar === " ") {
+          const isAtWordStart = typedInCurrentWord === 0;
+          const isSpaceInOriginal = text[currentIndex] === " ";
+
+          if (isAtWordStart || !isSpaceInOriginal) {
+            // Mark current word as wrong and move to next word
+            const nextSpaceIndex = text.indexOf(" ", currentIndex);
+            if (nextSpaceIndex !== -1) {
+              // Fill the current word with wrong characters up to the next space
+              const wrongChars = text
+                .slice(currentIndex, nextSpaceIndex)
+                .replace(/./g, "×");
+              setTyped((prev) => prev + wrongChars + " ");
+              setCurrentIndex(nextSpaceIndex + 1);
+              // Add errors for each skipped character
+              setErrors((prev) => prev + (nextSpaceIndex - currentIndex + 1));
+            }
+            return;
+          }
         }
 
-        setTyped((prev) => prev + inputChar);
-        setCurrentIndex((prev) => prev + 1);
+        // Rest of the existing typing logic
+        if (typedInCurrentWord < currentWordLength || inputChar === " ") {
+          setTyped((prev) => prev + inputChar);
+          setCurrentIndex((prev) => prev + 1);
 
-        if (text[currentIndex].toLowerCase() !== inputChar.toLowerCase()) {
-          setErrors((prev) => prev + 1);
-        }
+          if (text[currentIndex].toLowerCase() !== inputChar.toLowerCase()) {
+            setErrors((prev) => prev + 1);
+          }
 
-        if (currentIndex + 1 === text.length) {
-          setIsActive(false);
-          setCompletionTime(time - timeLeft);
-          calculateResults();
+          // Add debug event with additional word boundary info
+          setDebugEvents((prev) => [
+            {
+              key: inputChar,
+              code: e.code,
+              timestamp: new Date().toLocaleTimeString(),
+              expectedChar: text[currentIndex],
+              isCorrect:
+                inputChar.toLowerCase() === text[currentIndex]?.toLowerCase(),
+              currentIndex,
+              wordOverflow: typedInCurrentWord >= currentWordLength,
+              isWordStart: typedInCurrentWord === 0,
+              isWordEnd: text[currentIndex + 1] === " ",
+            },
+            ...prev.slice(0, maxDebugEvents - 1),
+          ]);
+
+          if (currentIndex + 1 === text.length) {
+            setIsActive(false);
+            setCompletionTime(time - timeLeft);
+            calculateResults();
+          }
+        } else {
+          e.preventDefault();
         }
       }
     }
