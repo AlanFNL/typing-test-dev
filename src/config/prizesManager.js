@@ -7,13 +7,13 @@ const DEFAULT_PRIZES = {
         { 
           id: 'mousepad_1',
           option: '¡Premio! 🎮 Mousepad',
-          probability: 0.15,
+          probability: 0.5,
           enabled: true
         },
         { 
           id: 'no_prize_1',
           option: 'Suerte la próxima',
-          probability: 0.85,
+          probability: 0.5,
           enabled: true
         }
       ]
