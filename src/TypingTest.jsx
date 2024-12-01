@@ -9,6 +9,79 @@ import UsernameModal from "./components/UsernameModal";
 import PrizeWheel from "./components/PrizeWheel";
 import Leaderboard from "./components/Leaderboard";
 
+const DebugPanel = ({ debugEvents, currentIndex, typed, text, errors }) => {
+  return (
+    <div className="fixed left-4 top-4 bg-gray-800/90 p-4 rounded-lg border border-gray-700/50 w-96 backdrop-blur-sm z-50">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-mono text-yellow-500">Debug Panel</h3>
+        <div className="flex gap-2">
+          <span className="text-xs bg-green-900/30 px-2 py-1 rounded">
+            Correct
+          </span>
+          <span className="text-xs bg-red-900/30 px-2 py-1 rounded">
+            Incorrect
+          </span>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-3 gap-2 mb-4 bg-gray-700/30 p-2 rounded">
+        <div className="text-xs">
+          <div className="text-gray-400">Index</div>
+          <div className="font-mono">{currentIndex}</div>
+        </div>
+        <div className="text-xs">
+          <div className="text-gray-400">Typed</div>
+          <div className="font-mono">{typed.length}</div>
+        </div>
+        <div className="text-xs">
+          <div className="text-gray-400">Errors</div>
+          <div className="font-mono">{errors}</div>
+        </div>
+      </div>
+
+      {/* Current Text Section */}
+      <div className="mb-4 p-2 bg-gray-700/30 rounded">
+        <div className="text-xs text-gray-400 mb-1">Current Text Position</div>
+        <div className="font-mono text-xs break-all">
+          <span className="text-gray-400">
+            {text.slice(Math.max(0, currentIndex - 10), currentIndex)}
+          </span>
+          <span className="text-yellow-500 bg-yellow-500/20 px-1">
+            {text[currentIndex] || " "}
+          </span>
+          <span className="text-gray-400">
+            {text.slice(currentIndex + 1, currentIndex + 10)}
+          </span>
+        </div>
+      </div>
+
+      {/* Keystrokes Section */}
+      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        <div className="text-xs text-gray-400 mb-1">Last Keystrokes</div>
+        {debugEvents.map((event, index) => (
+          <div
+            key={index}
+            className={`text-xs font-mono p-2 rounded flex items-center justify-between ${
+              event.isCorrect ? "bg-green-900/30" : "bg-red-900/30"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="bg-gray-700/50 px-2 py-1 rounded">
+                {event.key === " " ? "␣" : event.key}
+              </span>
+              <span className="text-gray-400">→</span>
+              <span className="bg-gray-700/50 px-2 py-1 rounded">
+                {event.expectedChar === " " ? "␣" : event.expectedChar}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const TypingTest = () => {
   const [text] = useState(getRandomText());
   const [typed, setTyped] = useState("");
@@ -31,6 +104,8 @@ const TypingTest = () => {
   const [isPrizeWheelOpen, setIsPrizeWheelOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [requestModal, setRequestModal] = useState(false);
+  const [debugEvents, setDebugEvents] = useState([]);
+  const maxDebugEvents = 10;
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("currentUser");
@@ -239,6 +314,19 @@ const TypingTest = () => {
   const handleKeyDown = (e) => {
     if (showResults) return;
 
+    // Add debug event
+    setDebugEvents((prev) => [
+      {
+        key: e.key,
+        code: e.code,
+        timestamp: new Date().toLocaleTimeString(),
+        expectedChar: text[currentIndex],
+        isCorrect: e.key.toLowerCase() === text[currentIndex]?.toLowerCase(),
+        currentIndex,
+      },
+      ...prev.slice(0, maxDebugEvents - 1),
+    ]);
+
     // Ignore special keys
     if (
       e.key === "Shift" ||
@@ -426,6 +514,14 @@ const TypingTest = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-300 p-6">
+      <DebugPanel
+        debugEvents={debugEvents}
+        currentIndex={currentIndex}
+        typed={typed}
+        text={text}
+        errors={errors}
+      />
+
       {!currentUser && <UsernameModal onSubmit={handleNewUser} />}
 
       {currentUser && (
