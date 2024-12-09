@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import easy from "../assets/easy.png";
@@ -8,10 +8,7 @@ import openSound from "../assets/start.mp3";
 const UsernameModal = ({ onSubmit }) => {
   const [username, setUsername] = useState("");
   const [difficulty, setDifficulty] = useState("easy");
-
-  const handleSubmit = () => {
-    onSubmit(username, difficulty);
-  };
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const audio = new Audio(openSound);
@@ -21,6 +18,18 @@ const UsernameModal = ({ onSubmit }) => {
 
     return () => clearTimeout(timeoutId);
   }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  const handleSubmit = () => {
+    onSubmit(username, difficulty);
+  };
 
   return (
     <motion.div
@@ -73,12 +82,14 @@ const UsernameModal = ({ onSubmit }) => {
               className="relative"
             >
               <input
+                ref={inputRef}
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-gray-700/50 p-3 pl-4 rounded-lg border border-gray-600/50 focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 transition-all outline-none"
                 placeholder="Ingresa tu apodo"
                 maxLength={15}
+                autoFocus
               />
               <div className="absolute right-3 top-3 text-xs text-gray-500">
                 {username.length}/15

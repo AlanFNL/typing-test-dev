@@ -16,7 +16,7 @@ const TypingTest = () => {
   const [typed, setTyped] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [time, setTime] = useState(15);
+  const [time, setTime] = useState(3);
   const [timeLeft, setTimeLeft] = useState(time);
   const inputRef = useRef(null);
   const [showResults, setShowResults] = useState(false);
@@ -233,6 +233,7 @@ const TypingTest = () => {
     if (attemptNumber >= 3) {
       localStorage.removeItem("currentUser");
       setCurrentUser(null);
+      setShowResults(false);
       setTyped("");
       setCurrentIndex(0);
       setIsActive(false);
@@ -244,6 +245,8 @@ const TypingTest = () => {
   }, [currentUser]);
 
   const handleKeyDown = (e) => {
+    if (!currentUser) return;
+
     if (showResults) return;
 
     // Ignore special keys
@@ -347,6 +350,7 @@ const TypingTest = () => {
   useEffect(() => {
     if (!currentUser || showResults) {
       shouldAllowFocus.current = false;
+      inputRef.current?.blur();
       return;
     }
 
