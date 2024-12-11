@@ -16,7 +16,7 @@ const TypingTest = () => {
   const [typed, setTyped] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [time, setTime] = useState(3);
+  const [time, setTime] = useState(15);
   const [timeLeft, setTimeLeft] = useState(time);
   const inputRef = useRef(null);
   const [showResults, setShowResults] = useState(false);
@@ -478,12 +478,12 @@ const TypingTest = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="text-center mb-4 relative"
+          className="text-center mb-4 relative flex justify-center items-center mx-auto"
         >
           <motion.div
-            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg px-6 py-2 inline-flex items-center gap-4"
-            initial={{ scale: 0.95 }}
-            animate={{ scale: 1 }}
+            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg px-6 py-2 inline-flex items-center gap-4 scale-75 md:scale-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.2 }}
           >
             <motion.div
@@ -549,7 +549,7 @@ const TypingTest = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 select-none">
           <div className="flex items-center space-x-2">
-            <img src={logo} className="h-24 w-auto" alt="Logo" />
+            <img src={logo} className="md:h-24 w-auto" alt="Logo" />
           </div>
 
           <div className="flex items-center gap-6">
