@@ -1,0 +1,6 @@
+export const TEST_DURATION_SECONDS = 15;
+export const PRIZE_WPM_TARGET = 41;
+
+export const WORDS_REQUIRED_FOR_PRIZE = Math.ceil(
+  (PRIZE_WPM_TARGET / 60) * TEST_DURATION_SECONDS
+);

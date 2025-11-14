@@ -1,30 +1,36 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TypingText from "./components/TypingText";
 import { getRandomText } from "./data/texts";
 import logo from "./assets/logo.png";
 import ResultsModal from "./components/ResultsModal";
-import { Trophy } from "lucide-react";
+import { Award, Github, Trophy } from "lucide-react";
 import UsernameModal from "./components/UsernameModal";
 import PrizeWheel from "./components/PrizeWheel";
 import Leaderboard from "./components/Leaderboard";
+import {
+  PRIZE_WPM_TARGET,
+  TEST_DURATION_SECONDS,
+  WORDS_REQUIRED_FOR_PRIZE,
+} from "./config/constants";
+const MAX_ATTEMPTS = 2;
 
-const AVERAGE_WPM = 40;
+const INITIAL_RESULTS = {
+  wpm: 0,
+  accuracy: 0,
+  isAboveAverage: false,
+};
 
 const TypingTest = () => {
-  const [text] = useState(getRandomText());
+  const [text, setText] = useState(() => getRandomText());
   const [typed, setTyped] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [time, setTime] = useState(15);
+  const time = TEST_DURATION_SECONDS;
   const [timeLeft, setTimeLeft] = useState(time);
   const inputRef = useRef(null);
   const [showResults, setShowResults] = useState(false);
-  const [results, setResults] = useState({
-    wpm: 0,
-    accuracy: 0,
-    isAboveAverage: false,
-  });
+  const [results, setResults] = useState(INITIAL_RESULTS);
   const [errors, setErrors] = useState(0);
   const [completionTime, setCompletionTime] = useState(null);
   const [unfinishedWords, setUnfinishedWords] = useState(0);
@@ -34,6 +40,7 @@ const TypingTest = () => {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [requestModal, setRequestModal] = useState(false);
   const maxDebugEvents = 10;
+  const [topTenPlacement, setTopTenPlacement] = useState(null);
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("currentUser");
@@ -47,6 +54,53 @@ const TypingTest = () => {
 
   const shouldAllowFocus = useRef(true);
 
+  const attemptsUsed = currentUser?.attempts?.length ?? 0;
+  const hasQualifiedForPrize =
+    currentUser?.attempts?.some((attempt) => attempt.wpm > PRIZE_WPM_TARGET) ??
+    false;
+  const canAttemptAgain = currentUser?.attempts
+    ? attemptsUsed < MAX_ATTEMPTS && !hasQualifiedForPrize
+    : false;
+  const goalMessage = hasQualifiedForPrize
+    ? ""
+    : `Necesitás escribir aproximadamente ${WORDS_REQUIRED_FOR_PRIZE} palabras correctas para desbloquear la ruleta. ¡Mientras más mejor!`;
+  const showGoalText = !isActive && !typed;
+  const typedWordCount = typed.trim()
+    ? typed
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0).length
+    : 0;
+  const wordProgress = Math.min(1, typedWordCount / WORDS_REQUIRED_FOR_PRIZE);
+  const wordsRemaining = Math.max(0, WORDS_REQUIRED_FOR_PRIZE - typedWordCount);
+  const shouldShowProgressBar =
+    currentUser && !showResults && (isActive || typedWordCount > 0);
+
+  const resetTest = ({ refreshText = false, autoFocus = true } = {}) => {
+    if (refreshText) {
+      setText(getRandomText());
+    }
+
+    setTyped("");
+    setCurrentIndex(0);
+    setIsActive(false);
+    setTimeLeft(time);
+    setErrors(0);
+    setCompletedWords(0);
+    setUnfinishedWords(0);
+    setCompletionTime(null);
+    setResults(INITIAL_RESULTS);
+    shouldAllowFocus.current = autoFocus;
+
+    if (autoFocus) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    } else {
+      inputRef.current?.blur();
+    }
+  };
+
   const handleNewUser = (username, selectedDifficulty) => {
     const newUser = {
       username,
@@ -56,39 +110,88 @@ const TypingTest = () => {
     setCurrentUser(newUser);
     setDifficulty(selectedDifficulty);
     shouldAllowFocus.current = true;
+    setTopTenPlacement(null);
+
+    resetTest({ refreshText: true });
 
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
   };
 
-  const handleTestComplete = (results) => {
-    if (!currentUser) return;
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
 
-    const newAttempt = {
-      wpm: results.wpm,
-      accuracy: results.accuracy,
-      errors,
-      timestamp: Date.now(),
-      difficulty: difficulty,
+    const handleRestrictedShortcuts = (event) => {
+      const key = event.key?.toLowerCase();
+      const usesModifier = event.ctrlKey || event.metaKey;
+
+      const isReloadShortcut = usesModifier && key === "r";
+      const isDevToolsShortcut =
+        (usesModifier && event.shiftKey && ["i", "j", "c"].includes(key)) ||
+        event.key === "F12" ||
+        event.key === "F5" ||
+        (usesModifier && key === "u");
+
+      if (isReloadShortcut || isDevToolsShortcut) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     };
 
-    const attemptNumber = currentUser.attempts.length + 1;
+    const preventContextMenu = (event) => {
+      event.preventDefault();
+    };
 
+    window.addEventListener("keydown", handleRestrictedShortcuts, true);
+    window.addEventListener("contextmenu", preventContextMenu);
+
+    return () => {
+      window.removeEventListener("keydown", handleRestrictedShortcuts, true);
+      window.removeEventListener("contextmenu", preventContextMenu);
+    };
+  }, []);
+
+  const handleTestComplete = (calculatedResults) => {
+    if (!currentUser) return;
+
+    const alreadyQualified = currentUser.attempts.some(
+      (attempt) => attempt.wpm > PRIZE_WPM_TARGET
+    );
+
+    if (alreadyQualified || currentUser.attempts.length >= MAX_ATTEMPTS) {
+      return;
+    }
+
+    const newAttempt = {
+      wpm: calculatedResults.wpm,
+      accuracy: calculatedResults.accuracy,
+      errors,
+      timestamp: Date.now(),
+      difficulty,
+    };
+
+    const updatedAttempts = [...currentUser.attempts, newAttempt];
     const updatedUser = {
       ...currentUser,
-      attempts: [...currentUser.attempts, newAttempt],
+      attempts: updatedAttempts,
     };
 
     if (
       !updatedUser.bestAttempt ||
-      (newAttempt.wpm > updatedUser.bestAttempt.wpm &&
-        newAttempt.difficulty === updatedUser.bestAttempt.difficulty)
+      newAttempt.wpm > (updatedUser.bestAttempt?.wpm ?? 0)
     ) {
       updatedUser.bestAttempt = newAttempt;
     }
 
-    if (attemptNumber >= 2) {
+    const hasQualifiedNow =
+      alreadyQualified || newAttempt.wpm > PRIZE_WPM_TARGET;
+    const sessionComplete =
+      hasQualifiedNow || updatedAttempts.length >= MAX_ATTEMPTS;
+
+    let placement = null;
+
+    if (sessionComplete && updatedUser.bestAttempt) {
       const newLeaderboard = [
         ...leaderboard,
         {
@@ -105,12 +208,24 @@ const TypingTest = () => {
         })
         .slice(0, 10);
 
+      const placementIndex = newLeaderboard.findIndex(
+        (entry) =>
+          entry.username === currentUser.username &&
+          entry.wpm === updatedUser.bestAttempt.wpm &&
+          entry.difficulty === updatedUser.bestAttempt.difficulty
+      );
+
+      if (placementIndex !== -1) {
+        placement = placementIndex + 1;
+      }
+
       localStorage.setItem("leaderboard", JSON.stringify(newLeaderboard));
       setLeaderboard(newLeaderboard);
     }
 
     localStorage.setItem("currentUser", JSON.stringify(updatedUser));
     setCurrentUser(updatedUser);
+    setTopTenPlacement(placement);
     setShowResults(true);
   };
 
@@ -173,7 +288,7 @@ const TypingTest = () => {
       (correctKeystrokes * 100) / Math.max(totalKeystrokes, 1)
     );
 
-    const isAboveAverage = wpm > AVERAGE_WPM;
+    const isAboveAverage = wpm > PRIZE_WPM_TARGET;
 
     // Add console debug logging
     console.log("Debug info:", {
@@ -226,25 +341,29 @@ const TypingTest = () => {
   }, [isActive, timeLeft]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !hasQualifiedForPrize) return;
+    if (showResults || isPrizeWheelOpen) return;
 
-    const attemptNumber = currentUser.attempts.length;
+    const attemptToShow =
+      currentUser.bestAttempt ||
+      currentUser.attempts[currentUser.attempts.length - 1];
 
-    if (attemptNumber >= 3) {
-      localStorage.removeItem("currentUser");
-      setCurrentUser(null);
-      setTyped("");
-      setCurrentIndex(0);
-      setIsActive(false);
-      setTimeLeft(time);
-      setErrors(0); // Reset errors
-      setCompletedWords(0); // Reset completed words
-      setUnfinishedWords(0); // Reset unfinished words
-    }
-  }, [currentUser]);
+    if (!attemptToShow) return;
+
+    setResults({
+      wpm: attemptToShow.wpm,
+      accuracy: attemptToShow.accuracy,
+      isAboveAverage: attemptToShow.wpm > PRIZE_WPM_TARGET,
+    });
+    setErrors(attemptToShow.errors ?? 0);
+    setCompletionTime(null);
+    setIsActive(false);
+    setShowResults(true);
+    shouldAllowFocus.current = false;
+  }, [currentUser, hasQualifiedForPrize, showResults, isPrizeWheelOpen]);
 
   const handleKeyDown = (e) => {
-    if (showResults) return;
+    if (showResults || !currentUser || !canAttemptAgain) return;
 
     // Ignore special keys
     if (
@@ -345,13 +464,13 @@ const TypingTest = () => {
   };
 
   useEffect(() => {
-    if (!currentUser || showResults) {
+    if (!currentUser || showResults || !canAttemptAgain) {
       shouldAllowFocus.current = false;
+      inputRef.current?.blur();
       return;
     }
 
     shouldAllowFocus.current = true;
-
     inputRef.current?.focus();
 
     const handleClick = (e) => {
@@ -388,21 +507,7 @@ const TypingTest = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       inputRef.current?.removeEventListener("blur", handleBlur);
     };
-  }, [currentUser, showResults]);
-
-  const resetTest = () => {
-    setTyped("");
-    setCurrentIndex(0);
-    setIsActive(false);
-    setTimeLeft(time);
-    setErrors(0);
-    setCompletedWords(0);
-    setUnfinishedWords(0);
-    shouldAllowFocus.current = true;
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
-  };
+  }, [currentUser, showResults, canAttemptAgain]);
 
   const colors = {
     upcoming: "#4B5563",
@@ -411,20 +516,38 @@ const TypingTest = () => {
     incorrect: "#EF4444",
   };
 
+  const handlePrepareNextAttempt = () => {
+    setShowResults(false);
+    resetTest();
+    setTopTenPlacement(null);
+  };
+
+  const handleSessionEnd = () => {
+    localStorage.removeItem("currentUser");
+    setCurrentUser(null);
+    setShowResults(false);
+    resetTest({ refreshText: true, autoFocus: false });
+    setTopTenPlacement(null);
+  };
+
+  const handleOpenPrizeModal = () => {
+    setShowResults(false);
+    resetTest({ autoFocus: false });
+    setIsPrizeWheelOpen(true);
+  };
+
   const handlePrizeWon = (prize) => {
     console.log("Won prize:", prize);
 
     setTimeout(() => {
       setIsPrizeWheelOpen(false);
-      localStorage.removeItem("currentUser");
-      setCurrentUser(null);
+      handleSessionEnd();
     }, 120000);
   };
 
   const handleClosePrize = () => {
     setIsPrizeWheelOpen(false);
-    localStorage.removeItem("currentUser");
-    setCurrentUser(null);
+    handleSessionEnd();
   };
 
   const handleCloseLeaderboard = () => {
@@ -435,7 +558,8 @@ const TypingTest = () => {
   };
 
   const getCurrentDifficultyAndWPM = () => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
+    const user =
+      currentUser || JSON.parse(localStorage.getItem("currentUser") || "null");
     if (user?.attempts?.length > 0) {
       const lastDifficulty = user.attempts[user.attempts.length - 1].difficulty;
 
@@ -456,9 +580,8 @@ const TypingTest = () => {
   };
 
   const resetUser = () => {
-    localStorage.removeItem("currentUser");
-    setCurrentUser(null);
-    setRequestModal(!requestModal);
+    handleSessionEnd();
+    setRequestModal(false);
   };
 
   const toggleModal = () => {
@@ -467,7 +590,9 @@ const TypingTest = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-300 p-6">
-      {!currentUser && <UsernameModal onSubmit={handleNewUser} />}
+      {!currentUser && (
+        <UsernameModal onSubmit={handleNewUser} leaderboard={leaderboard} />
+      )}
 
       {currentUser && (
         <motion.div
@@ -522,22 +647,6 @@ const TypingTest = () => {
                 ))}
               </div>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-center gap-2"
-            >
-              <span className="text-gray-400">Dificultad:</span>
-              <motion.div
-                className={
-                  difficulty === "hard" ? "text-yellow-500" : "text-gray-300"
-                }
-              >
-                {difficulty === "hard" ? "Difícil" : "Fácil"}
-              </motion.div>
-            </motion.div>
           </motion.div>
         </motion.div>
       )}
@@ -559,30 +668,96 @@ const TypingTest = () => {
                   isActive ? "hidden cursor-not-allowed" : ""
                 }`}
               >
-                <p>Rendirse</p>
+                <p>Abandonar</p>
               </motion.button>
             ) : (
               <></>
             )}
+            {/* <div className="flex items-center gap-6">
+              <motion.button
+                onClick={() => toggleModal('instrucciones')} // Pasa un tipo específico
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isActive}
+                className={`flex bg-gray-700 items-center justify-center w-fit p-2 h-10 rounded-lg text-gray-300 hover:text-yellow-500 transition-colors ${
+                  isActive ? "hidden cursor-not-allowed" : ""
+                }`}
+              >
+                <p>Instrucciones</p>
+              </motion.button>
+            </div> */}
 
             <motion.button
               onClick={() => setIsLeaderboardOpen(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`flex items-center justify-center w-10 h-10 rounded-lg bg-gray-700/50 text-gray-300 hover:text-yellow-500 transition-colors ${
+              className={`flex items-center gap-2 px-3 h-10 rounded-lg bg-gray-700/50 text-gray-300 hover:text-yellow-500 transition-colors ${
                 isActive ? "hidden cursor-not-allowed" : ""
               }`}
               transition={{ duration: 0.3 }}
               disabled={isActive}
             >
               <Trophy className="w-5 h-5" />
+              <span>Ranking</span>
+            </motion.button>
+            <motion.button
+              className={`flex items-center gap-2 px-3 h-10 rounded-lg bg-yellow-700/50 text-gray-300 hover:text-yellow-500 transition-colors ${
+                isActive ? "hidden cursor-not-allowed" : ""
+              }`}
+              transition={{ duration: 0.3 }}
+              disabled={isActive}
+            >
+              <Award className="w-5 h-5" />
+              <span>
+                Si haces {PRIZE_WPM_TARGET} PPM o más podes girar la ruleta
+              </span>
             </motion.button>
           </div>
         </div>
 
-        <div className="text-center mb-8 select-none cursor-default">
+        <div className="text-center mb-6 mt-32 select-none cursor-default">
           <span className="text-2xl font-mono">{timeLeft}s</span>
         </div>
+
+        {currentUser && (
+          <div className="max-w-[51rem] w-[800px] mx-auto mb-8 absolute top-[190px] left-1/2 -translate-x-1/2">
+            <div
+              className={`bg-gray-800/50 border border-gray-700/60 rounded-lg px-4 py-4 text-sm text-gray-200 ${
+                shouldShowProgressBar ? "mb-8" : ""
+              } ${isActive ? "opacity-75" : ""}`}
+            >
+              <p className={`text-center mb-3 ${isActive ? "opacity-0" : ""}`}>
+                {goalMessage}
+              </p>
+
+              <div className="space-y-2">
+                <div className="h-2 bg-gray-700/70 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${wordProgress * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                    className={`h-full rounded-full ${
+                      wordProgress >= 1
+                        ? "bg-green-400"
+                        : wordProgress >= 0.7
+                        ? "bg-yellow-300"
+                        : "bg-yellow-500/90"
+                    }`}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>Palabras registradas: {typedWordCount}</span>
+
+                  <span>
+                    {typedWordCount >= WORDS_REQUIRED_FOR_PRIZE
+                      ? "Objetivo alcanzado, seguí sumando para entrar en el top!"
+                      : `Faltan ${wordsRemaining} palabras`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="relative mb-8 max-w-[51rem] mx-auto select-none cursor-default text-balance text-left">
           <input
@@ -617,24 +792,31 @@ const TypingTest = () => {
             Este juego es de acceso libre y gratuito. No requiere pago para
             participar.
           </p>
+          <p className="flex items-center justify-center mt-2 gap-2">
+            Desarrollado por <Github className="w-4 h-4" />
+            AlanFNL
+          </p>
         </div>
 
         <AnimatePresence>
           {showResults && (
             <ResultsModal
-              onClose={() => {
-                setShowResults(false);
-                resetTest();
-              }}
+              onNextAttempt={handlePrepareNextAttempt}
+              onSessionEnd={handleSessionEnd}
               results={results}
               completedWords={completedWords}
               unfinishedWords={unfinishedWords}
               errors={errors}
               completionTime={completionTime}
               time={time}
-              currentUser={currentUser}
-              onOpenPrizeWheel={() => setIsPrizeWheelOpen(true)}
-              averageWPM={AVERAGE_WPM}
+              onOpenPrizeWheel={handleOpenPrizeModal}
+              attemptNumber={attemptsUsed}
+              maxAttempts={MAX_ATTEMPTS}
+              qualifiesForPrizeWheel={hasQualifiedForPrize}
+              topTenPlacement={topTenPlacement}
+              leaderboard={leaderboard}
+              highlightUsername={currentUser?.username}
+              averageWPM={PRIZE_WPM_TARGET}
             />
           )}
         </AnimatePresence>
@@ -682,7 +864,8 @@ const TypingTest = () => {
                     ¿Estás seguro que querés rendirte?
                   </p>
                   <p className="text-sm text-gray-300 text-center mt-2">
-                    Se reiniciará el progreso actual
+                    Deberas dejar de jugar y darle el lugar a la siguiente
+                    persona.
                   </p>
                   <div className="gap-4 flex mt-8">
                     <motion.button

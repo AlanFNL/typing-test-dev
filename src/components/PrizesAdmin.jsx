@@ -31,6 +31,7 @@ const PrizesAdmin = () => {
       isNew: true,
       id: `prize_${Date.now()}`,
       option: "",
+      content:"",
       probability: 0.1,
       enabled: true,
     });
@@ -45,6 +46,7 @@ const PrizesAdmin = () => {
     const [form, setForm] = useState({
       id: prize.id || "",
       option: prize.option || "",
+      content: prize.content || "",
       probability: prize.probability || 0.1,
       enabled: prize.enabled !== undefined ? prize.enabled : true,
     });
@@ -65,6 +67,7 @@ const PrizesAdmin = () => {
         const newPrize = {
           id: form.id,
           option: form.option,
+          content: form.content,
           probability: parseFloat(form.probability) || 0.1,
           enabled: form.enabled,
         };
@@ -106,6 +109,17 @@ const PrizesAdmin = () => {
                 type="text"
                 value={form.option}
                 onChange={(e) => setForm({ ...form, option: e.target.value })}
+                className="w-full bg-gray-700 text-white rounded px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">
+                Content
+              </label>
+              <input
+                type="text"
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
                 className="w-full bg-gray-700 text-white rounded px-3 py-2"
               />
             </div>

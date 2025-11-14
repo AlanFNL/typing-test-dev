@@ -5,6 +5,8 @@ import { Confetti } from "./Confetti";
 import { getPrizesByDifficultyAndWPM } from "../config/prizesManager";
 import promoCodes from "../config/promoCodes.json";
 import momo from "../assets/momo.mp4";
+import { Star, Ban, Trophy, Percent, Keyboard } from "lucide-react";
+
 
 const PrizeWheel = ({ onPrizeWon, isOpen, onClose, difficulty, wpm = 0 }) => {
   const [mustSpin, setMustSpin] = useState(false);
@@ -120,7 +122,7 @@ const PrizeWheel = ({ onPrizeWon, isOpen, onClose, difficulty, wpm = 0 }) => {
     return (
       <div className="bg-yellow-500/20 text-yellow-300 p-4 rounded-lg mb-4">
         <h3 className="text-xl font-bold mb-2">¡Felicidades! 🎉</h3>
-        <p className="text-center">¡Has ganado {wonPrize.option}!</p>
+        <p className="text-center">¡Has ganado {wonPrize.content}!</p>
         {promoCode && (
           <div className="mt-4">
             <div className="bg-yellow-500/10 p-4 rounded-lg">
@@ -199,8 +201,23 @@ const PrizeWheel = ({ onPrizeWon, isOpen, onClose, difficulty, wpm = 0 }) => {
                 </h2>
                 <p className="text-gray-400 text-sm">
                   {difficulty === "hard"
-                    ? "Modo Difícil - ¡Premios Exclusivos!"
-                    : "Modo Fácil"}
+                  //   ? <>
+                  //   ¡Tienes la oportunidad de ganar premios exclusivos!<br /><br />
+                  //   <Keyboard className="inline-block w-4 h-4 text-yellow-500" /> Set de keycap color solido - [Probabilidad 5%]<br />
+                  //   <Percent className="inline-block w-4 h-4 text-yellow-500" /> Descuentos - [Probabilidad 40%]<br />
+                  //   <Star className="inline-block w-4 h-4 text-yellow-500" /> Keycap gratis  - [Probabilidad 20%]<br />
+                  //   <Star className="inline-block w-4 h-4 text-yellow-500" /> 2x1 - [Probabilidad 10%]<br />
+                  //   <Ban className="inline-block w-4 h-4 text-yellow-500" /> Perder- [Probabilidad 25%]<br />
+                  // </>
+                  //   : <>
+                  //   ¡Tienes la oportunidad de ganar premios exclusivos!<br /><br />
+                  //   <Keyboard className="inline-block w-4 h-4 text-yellow-500" /> Set de keycap color solido - [Probabilidad 5%]<br />
+                  //   <Percent className="inline-block w-4 h-4 text-yellow-500" /> Descuentos - [Probabilidad 40%]<br />
+                  //   <Star className="inline-block w-4 h-4 text-yellow-500" /> Keycap gratis  - [Probabilidad 20%]<br />
+                  //   <Star className="inline-block w-4 h-4 text-yellow-500" /> 2x1 - [Probabilidad 10%]<br />
+                  //   <Ban className="inline-block w-4 h-4 text-yellow-500" /> Perder- [Probabilidad 25%]<br />
+                  // </>
+                    }
                 </p>
               </div>
             )}
@@ -224,7 +241,7 @@ const PrizeWheel = ({ onPrizeWon, isOpen, onClose, difficulty, wpm = 0 }) => {
                   onStopSpinning={handleStopSpinning}
                   spinDuration={0.8}
                   fontSize={16}
-                  textDistance={60}
+                  textDistance={52}
                   outerBorderWidth={2}
                   outerBorderColor="#f6c90e"
                   innerRadius={10}

@@ -104,28 +104,6 @@ const Leaderboard = ({ isOpen, onClose }) => {
               <h2 className="text-2xl font-bold text-center text-white mb-6">
                 🏆 Tabla de Clasificación
               </h2>
-
-              {/* Tabs */}
-              <div className="flex gap-2 p-1 bg-gray-700/30 rounded-lg">
-                <TabButton
-                  active={activeTab === "all"}
-                  onClick={() => setActiveTab("all")}
-                >
-                  Todos
-                </TabButton>
-                <TabButton
-                  active={activeTab === "easy"}
-                  onClick={() => setActiveTab("easy")}
-                >
-                  Modo Fácil
-                </TabButton>
-                <TabButton
-                  active={activeTab === "hard"}
-                  onClick={() => setActiveTab("hard")}
-                >
-                  Modo Difícil
-                </TabButton>
-              </div>
             </div>
 
             {/* Content Section - Fixed Height */}
@@ -178,11 +156,6 @@ const Leaderboard = ({ isOpen, onClose }) => {
                               }`}
                             >
                               {entry.username}
-                            </p>
-                            <p className="text-sm text-gray-400">
-                              {entry.difficulty === "hard"
-                                ? "Modo Difícil"
-                                : "Modo Fácil"}
                             </p>
                           </div>
                         </div>

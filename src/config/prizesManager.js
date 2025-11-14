@@ -5,15 +5,60 @@ const DEFAULT_PRIZES = {
       wpmRange: { min: 0, max: 60 },
       prizes: [
         { 
-          id: 'mousepad_1',
-          option: '¡Premio! 🎮 Mousepad',
+          id: 'premio1',
+          option: '¡Descuento Pads',
+          content: '¡10% descuento en pads',
           probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio2',
+          option: '¡Keycap Gratis',
+          content: 'Keycap gratis linea economica',
+          probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio3',
+          option: '¡Patita de gato',
+          content: '¡keycap pata de gato linea economica',
+          probability: 0.10,
+          enabled: true
+        },
+        { 
+          id: 'premio322',
+          option: '¡Keycap gratis',
+          content: '¡keycap gratis a eleccionnn de linea economica',
+          probability: 0.1,
+          enabled: true
+        },
+        
+        { 
+          id: 'premio4',
+          option: '¡2x1 Artisans',
+          content: '¡2x1 en Keycaps artesanales',
+          probability: 0.05,
+          enabled: true
+        },
+        { 
+          id: 'premio5',
+          option: '¡15% Off Pads',
+          content: '¡Descuento 15% en Mouse pads',
+          probability: 0.10,
+          enabled: true
+        },
+        { 
+          id: 'premio6',
+          option: '¡Orden $15.000',
+          content: '¡$15.000 para gastar en teclados',
+          probability: 0.10,
           enabled: true
         },
         { 
           id: 'no_prize_1',
           option: 'Suerte la próxima',
-          probability: 0.85,
+          content: 'Podes jugar nuevamente en un ratito',
+          probability: 0.25,
           enabled: true
         }
       ]
@@ -22,15 +67,66 @@ const DEFAULT_PRIZES = {
       wpmRange: { min: 61, max: 999 },
       prizes: [
         { 
-          id: 'keycap_1',
-          option: '¡Premio! ⌨️ Keycap RGB',
+          id: 'premio90',
+          option: '¡Keycap Gratis',
+          content: 'Keycap gratis a eleccion de la linea economica',
+          probability: 0.20,
+          enabled: true
+        },
+        { 
+          id: 'premio95',
+          option: '¡Mouse Pad Onicaps',
+          content: 'Mouse pads con el logo de onicaps',
+          probability: 0.20,
+          enabled: true
+        },
+        { 
+          id: 'premio91',
+          option: '¡15 Descuento Pads',
+          content: '15% de descuento en mouse pads',
           probability: 0.10,
+          enabled: true
+        },
+        { 
+          id: 'premio7',
+          option: '¡15 Descuento Pads',
+          content: '15% de descuento en mouse pads',
+          probability: 0.10,
+          enabled: true
+        },
+        { 
+          id: 'premio8',
+          option: '¡10 Descuento Pads',
+          content: '¡10% de descuento en pads',
+          probability: 0.20,
+          enabled: true
+        },
+        { 
+          id: 'premio9',
+          option: '¡3 patitas de gato',
+          content: '¡3 keycaps de patita de gato linea economica',
+          probability: 0.10,
+          enabled: true
+        },
+        { 
+          id: 'premio10',
+          option: '¡2x1 en Artisans',
+          content: '¡2x1 en nuestras keycaps artesanales',
+          probability: 0.02,
+          enabled: true
+        },
+        { 
+          id: 'premio11',
+          option: '¡Set de keycaps',
+          content: '¡set de keycaps rojo color pleno',
+          probability: 0.01,
           enabled: true
         },
         { 
           id: 'no_prize_2',
           option: 'Suerte la próxima',
-          probability: 0.90,
+          content: '¡Podes jugar nuevamente en un rato',
+          probability: 0.25,
           enabled: true
         }
       ]
@@ -41,15 +137,52 @@ const DEFAULT_PRIZES = {
       wpmRange: { min: 0, max: 60 },
       prizes: [
         { 
-          id: 'keycap_premium_1',
-          option: '¡Premio! ⌨️ Keycap Premium',
-          probability: 0.10,
+          id: 'premio12',
+          option: '¡Premio! 🎮 Mousepad',
+          content: '¡this is content',
+          probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio13',
+          option: '¡Premio! 🎮 Mousepad',
+          content: '¡this is content',
+          probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio14',
+          option: '¡Premio! 🎮 Mousepad',
+          content: '¡this is content',
+          probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio15',
+          option: '¡Premio! 🎮 Mousepad',
+          content: '¡this is content',
+          probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio16',
+          option: '¡Premio! 🎮 Mousepad',
+          content: '¡this is content',
+          probability: 0.15,
+          enabled: true
+        },
+        { 
+          id: 'premio17',
+          option: '¡Premio! 🎮 Mousepad',
+          content: '¡this is content',
+          probability: 0.15,
           enabled: true
         },
         { 
           id: 'no_prize_3',
           option: 'Suerte la próxima',
-          probability: 0.90,
+          content: '¡this is content',
+          probability: 0.85,
           enabled: true
         }
       ]
@@ -58,14 +191,44 @@ const DEFAULT_PRIZES = {
       wpmRange: { min: 61, max: 999 },
       prizes: [
         { 
-          id: 'keyboard_1',
+          id: 'premio18',
           option: '¡Premio! ⌨️ Teclado Gaming',
+          content: '¡this is content',
           probability: 0.05,
           enabled: true
         },
         { 
-          id: 'no_prize_4',
+          id: 'no_prize_19',
           option: 'Suerte la próxima',
+          content: '¡this is content',
+          probability: 0.95,
+          enabled: true
+        },
+        { 
+          id: 'no_prize_20',
+          option: 'Suerte la próxima',
+          content: '¡this is content',
+          probability: 0.95,
+          enabled: true
+        },
+        { 
+          id: 'no_prize_21',
+          option: 'Suerte la próxima',
+          content: '¡this is content',
+          probability: 0.95,
+          enabled: true
+        },
+        { 
+          id: 'no_prize_22',
+          option: 'Suerte la próxima',
+          content: '¡this is content',
+          probability: 0.95,
+          enabled: true
+        },
+        { 
+          id: 'no_prize_23',
+          option: 'Suerte la próxima',
+          content: '¡this is content',
           probability: 0.95,
           enabled: true
         }
@@ -307,6 +470,7 @@ export const getPrizesByDifficultyAndWPM = (difficulty, wpm = 0) => {
       {
         id: 'default_no_prize',
         option: 'Suerte la próxima',
+        content: 'this is content',
         probability: 1,
         enabled: true
       }
@@ -333,6 +497,7 @@ export const getPrizesByDifficultyAndWPM = (difficulty, wpm = 0) => {
       {
         id: 'default_no_prize',
         option: 'Suerte la próxima',
+        content: 'this is content',
         probability: 1,
         enabled: true
       }
@@ -348,6 +513,7 @@ export const getPrizesByDifficultyAndWPM = (difficulty, wpm = 0) => {
       {
         id: 'default_no_prize',
         option: 'Suerte la próxima',
+        content: 'this is content',
         probability: 1,
         enabled: true
       }
