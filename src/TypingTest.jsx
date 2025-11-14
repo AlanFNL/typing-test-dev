@@ -363,7 +363,9 @@ const TypingTest = () => {
   }, [currentUser, hasQualifiedForPrize, showResults, isPrizeWheelOpen]);
 
   const handleKeyDown = (e) => {
-    if (showResults || !currentUser || !canAttemptAgain) return;
+    if (!currentUser) return;
+
+    if (showResults) return;
 
     // Ignore special keys
     if (
@@ -599,12 +601,12 @@ const TypingTest = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="text-center mb-4 relative"
+          className="text-center mb-4 relative flex justify-center items-center mx-auto"
         >
           <motion.div
-            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg px-6 py-2 inline-flex items-center gap-4"
-            initial={{ scale: 0.95 }}
-            animate={{ scale: 1 }}
+            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg px-6 py-2 inline-flex items-center gap-4 scale-75 md:scale-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.2 }}
           >
             <motion.div
@@ -654,7 +656,7 @@ const TypingTest = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 select-none">
           <div className="flex items-center space-x-2">
-            <img src={logo} className="h-24 w-auto" alt="Logo" />
+            <img src={logo} className="md:h-24 w-auto" alt="Logo" />
           </div>
 
           <div className="flex items-center gap-6">
