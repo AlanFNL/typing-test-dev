@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TypingText from "./components/TypingText";
 import { getRandomText } from "./data/texts";
@@ -62,15 +62,36 @@ const TypingTest = () => {
     ? attemptsUsed < MAX_ATTEMPTS && !hasQualifiedForPrize
     : false;
   const goalMessage = hasQualifiedForPrize
-    ? ""
+    ? "Ya alcanzaste el objetivo, mantené el ritmo hasta que termine el tiempo para asegurarlo."
     : `Necesitás escribir aproximadamente ${WORDS_REQUIRED_FOR_PRIZE} palabras correctas para desbloquear la ruleta. ¡Mientras más mejor!`;
   const showGoalText = !isActive && !typed;
-  const typedWordCount = typed.trim()
+  const originalWords = useMemo(
+    () =>
+      text
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0),
+    [text]
+  );
+  const typedEndsWithSpace = /\s$/.test(typed);
+  const typedWordsRaw = typed.trim().length
     ? typed
         .trim()
         .split(/\s+/)
-        .filter((word) => word.length > 0).length
-    : 0;
+        .filter((word) => word.length > 0)
+    : [];
+  const completedTypedWords = typedEndsWithSpace
+    ? typedWordsRaw
+    : typedWordsRaw.slice(0, -1);
+  const typedWordCount = completedTypedWords.reduce((count, typedWord, index) => {
+    if (
+      index < originalWords.length &&
+      typedWord.toLowerCase() === originalWords[index].toLowerCase()
+    ) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
   const wordProgress = Math.min(1, typedWordCount / WORDS_REQUIRED_FOR_PRIZE);
   const wordsRemaining = Math.max(0, WORDS_REQUIRED_FOR_PRIZE - typedWordCount);
   const shouldShowProgressBar =
