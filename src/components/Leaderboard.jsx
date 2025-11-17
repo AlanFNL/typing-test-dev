@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Crown, Medal, Award } from "lucide-react";
 
@@ -33,18 +33,31 @@ const TabButton = ({ active, onClick, children }) => (
   </button>
 );
 
+const sortEntries = (entries = []) =>
+  [...entries].sort((a, b) => {
+    if (b.wpm !== a.wpm) return b.wpm - a.wpm;
+    const aAcc = typeof a.accuracy === "number" ? a.accuracy : 0;
+    const bAcc = typeof b.accuracy === "number" ? b.accuracy : 0;
+    if (bAcc !== aAcc) return bAcc - aAcc;
+    return (a.timestamp || 0) - (b.timestamp || 0);
+  });
+
 const Leaderboard = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState("all");
-  const allLeaderboard = JSON.parse(
-    localStorage.getItem("leaderboard") || "[]"
+  const allLeaderboard = useMemo(
+    () => sortEntries(JSON.parse(localStorage.getItem("leaderboard") || "[]")),
+    []
   );
 
   // Filter leaderboard based on active tab
-  const filteredLeaderboard = allLeaderboard.filter((entry) => {
-    if (activeTab === "easy") return entry.difficulty === "easy";
-    if (activeTab === "hard") return entry.difficulty === "hard";
-    return true;
-  });
+  const filteredLeaderboard = useMemo(() => {
+    const filtered = allLeaderboard.filter((entry) => {
+      if (activeTab === "easy") return entry.difficulty === "easy";
+      if (activeTab === "hard") return entry.difficulty === "hard";
+      return true;
+    });
+    return sortEntries(filtered);
+  }, [allLeaderboard, activeTab]);
 
   const getRankIcon = (index) => {
     switch (index) {
@@ -112,7 +125,7 @@ const Leaderboard = ({ isOpen, onClose }) => {
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
-                className="h-full overflow-y-auto pr-2 custom-scrollbar"
+                className="h-full overflow-y-auto pr-2 scrollbar-slim"
               >
                 <div className="space-y-3">
                   {filteredLeaderboard.length === 0 ? (
