@@ -385,6 +385,36 @@ const TypingTest = () => {
     shouldAllowFocus.current = false;
   }, [currentUser, hasQualifiedForPrize, showResults, isPrizeWheelOpen]);
 
+  useEffect(() => {
+    const toggleFullscreen = async () => {
+      if (!document.fullscreenElement) {
+        try {
+          await document.documentElement.requestFullscreen();
+        } catch (err) {
+          console.warn("No se pudo entrar a pantalla completa", err);
+        }
+      } else {
+        try {
+          await document.exitFullscreen();
+        } catch (err) {
+          console.warn("No se pudo salir de pantalla completa", err);
+        }
+      }
+    };
+
+    const handleFullscreenShortcut = (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key?.toLowerCase() === "f") {
+        event.preventDefault();
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener("keydown", handleFullscreenShortcut, true);
+    return () => {
+      window.removeEventListener("keydown", handleFullscreenShortcut, true);
+    };
+  }, []);
+
   const handleKeyDown = (e) => {
     if (!currentUser) return;
 
