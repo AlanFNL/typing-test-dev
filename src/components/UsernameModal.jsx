@@ -153,7 +153,7 @@ const UsernameModal = ({ onSubmit, leaderboard = [] }) => {
                 Aún no hay participantes en el ranking. ¡Podés ser el primero!
               </p>
             ) : (
-              <ul className="space-y-3 max-h-[500px] overflow-y-auto">
+              <ul className="space-y-3 max-h-[500px] overflow-y-auto scrollbar-slim">
                 {leaderboard.slice(0, 10).map((entry, index) => (
                   <li
                     key={`${entry.username}-${index}`}

@@ -21,6 +21,15 @@ const INITIAL_RESULTS = {
   isAboveAverage: false,
 };
 
+const sortLeaderboardEntries = (entries = []) =>
+  [...entries].sort((a, b) => {
+    if (b.wpm !== a.wpm) return b.wpm - a.wpm;
+    const aAcc = typeof a.accuracy === "number" ? a.accuracy : 0;
+    const bAcc = typeof b.accuracy === "number" ? b.accuracy : 0;
+    if (bAcc !== aAcc) return bAcc - aAcc;
+    return (a.timestamp || 0) - (b.timestamp || 0);
+  });
+
 const TypingTest = () => {
   const [text, setText] = useState(() => getRandomText());
   const [typed, setTyped] = useState("");
@@ -49,7 +58,7 @@ const TypingTest = () => {
 
   const [leaderboard, setLeaderboard] = useState(() => {
     const saved = localStorage.getItem("leaderboard");
-    return saved ? JSON.parse(saved) : [];
+    return saved ? sortLeaderboardEntries(JSON.parse(saved)) : [];
   });
 
   const shouldAllowFocus = useRef(true);
@@ -213,21 +222,14 @@ const TypingTest = () => {
     let placement = null;
 
     if (sessionComplete && updatedUser.bestAttempt) {
-      const newLeaderboard = [
+      const newLeaderboard = sortLeaderboardEntries([
         ...leaderboard,
         {
           username: currentUser.username,
           ...updatedUser.bestAttempt,
           difficulty: updatedUser.bestAttempt.difficulty,
         },
-      ]
-        .sort((a, b) => {
-          if (a.difficulty !== b.difficulty) {
-            return a.difficulty === "hard" ? -1 : 1;
-          }
-          return b.wpm - a.wpm;
-        })
-        .slice(0, 10);
+      ]).slice(0, 10);
 
       const placementIndex = newLeaderboard.findIndex(
         (entry) =>

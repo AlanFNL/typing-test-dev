@@ -258,7 +258,7 @@ const ResultsModal = ({
                 </h3>
               </div>
               <div
-                className="space-y-3 overflow-y-auto pr-1"
+                className="space-y-3 overflow-y-auto pr-1 scrollbar-slim"
                 style={{ maxHeight: "24rem" }}
               >
                 {leaderboard.map((entry, index) => {
